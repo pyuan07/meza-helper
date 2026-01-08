@@ -90,7 +90,7 @@ extension TagTypeExtension on TagType {
   }
 }
 
-@HiveType(typeId: 1)
+@HiveType(typeId: 3)
 enum Mechanic {
   @HiveField(0)
   none,

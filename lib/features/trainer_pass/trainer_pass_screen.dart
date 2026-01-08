@@ -29,30 +29,6 @@ class _TrainerPassScreenState extends ConsumerState<TrainerPassScreen> {
     super.initState();
     // Smaller fraction to show side cards clearly (Spin effect)
     _pageController = PageController(viewportFraction: 0.65);
-
-    // Add dummy data for testing if we have fewer than 3
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final trainers = ref.read(trainersProvider);
-      if (trainers.length < 3) {
-        if (!trainers.any((t) => t.name == "Ash Ketchum")) {
-          ref
-              .read(trainersProvider.notifier)
-              .addTrainer("Ash Ketchum", "MEZA-1234-5678");
-        }
-        if (!trainers.any((t) => t.name == "Gary Oak")) {
-          ref
-              .read(trainersProvider.notifier)
-              .addTrainer("Gary Oak", "MEZA-8765-4321");
-        }
-        if (!trainers.any((t) => t.name == "Cynthia")) {
-          ref
-              .read(trainersProvider.notifier)
-              .addTrainer("Cynthia", "MEZA-9999-0000");
-        }
-      }
-      // Removed auto-brightness on entry
-      // _setBrightness(1.0);
-    });
   }
 
   @override

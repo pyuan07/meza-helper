@@ -176,7 +176,7 @@ class TagTypeAdapter extends TypeAdapter<TagType> {
 
 class MechanicAdapter extends TypeAdapter<Mechanic> {
   @override
-  final int typeId = 1;
+  final int typeId = 3;
 
   @override
   Mechanic read(BinaryReader reader) {
