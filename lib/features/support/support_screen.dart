@@ -5,6 +5,7 @@ import 'package:screen_brightness/screen_brightness.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme.dart';
+import '../../models/tag_model.dart';
 import '../settings/settings_provider.dart';
 
 class SupportScreen extends ConsumerStatefulWidget {
@@ -21,111 +22,91 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
     SupportTicketData(
       name: 'Gengar',
       moveName: 'Shadow Ball (Special)',
-      moveType: 'Ghost',
+      moveType: TagType.ghost,
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/gengar_qr.png',
       imagePath: 'assets/images/gengar.png',
-      typeColor: Colors.deepPurple,
-      typeIcon: Icons.nightlight_round,
       availableInMalaysia: true,
     ),
     SupportTicketData(
       name: 'Lapras',
       moveName: 'Ice Beam (Special)',
-      moveType: 'Ice',
+      moveType: TagType.ice,
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/lapras_qr.png',
       imagePath: 'assets/images/lapras.png',
-      typeColor: Colors.cyan,
-      typeIcon: Icons.ac_unit,
       availableInMalaysia: true,
     ),
     SupportTicketData(
       name: 'Mimikyu',
       moveName: 'Shadow Claw (Physical)',
-      moveType: 'Ghost',
+      moveType: TagType.ghost,
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/mimikyu_qr.png',
       imagePath: 'assets/images/mimikyu.png',
-      typeColor: Colors.deepPurple,
-      typeIcon: Icons.cut,
       availableInMalaysia: true,
     ),
     SupportTicketData(
       name: 'Duraludon',
       moveName: 'Flash Cannon (Special)',
-      moveType: 'Steel',
+      moveType: TagType.steel,
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/duraludon_qr.png',
       imagePath: 'assets/images/duraludon.png',
-      typeColor: Colors.blueGrey,
-      typeIcon: Icons.shield,
       availableInMalaysia: true,
     ),
     SupportTicketData(
       name: 'Blastoise',
       moveName: 'Hydro Pump (Special)',
-      moveType: 'Water',
+      moveType: TagType.water,
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/blastoise_qr.png',
       imagePath: 'assets/images/blastoise.png',
-      typeColor: Colors.blue,
-      typeIcon: Icons.water_drop,
       availableInMalaysia: false,
     ),
     SupportTicketData(
       name: 'Keldeo',
       moveName: 'Secret Sword (Special)',
-      moveType: 'Fighting',
+      moveType: TagType.fighting,
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/keldeo_qr.png',
       imagePath: 'assets/images/keldeo.png',
-      typeColor: Colors.red,
-      typeIcon: Icons.water,
       availableInMalaysia: false,
     ),
     SupportTicketData(
       name: 'Mega Charizard X',
       moveName: 'Flamethrower (Special)',
-      moveType: 'Fire',
+      moveType: TagType.fire,
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/mega_charizardX_qr.png',
       imagePath: 'assets/images/charizard_x.png',
-      typeColor: Colors.deepOrange,
-      typeIcon: Icons.local_fire_department,
       availableInMalaysia: false,
     ),
     SupportTicketData(
       name: 'Mega Gardevoir',
       moveName: 'Psychic (Special)',
-      moveType: 'Psychic',
+      moveType: TagType.psychic,
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/mega_gardevoir_qr.png',
       imagePath: 'assets/images/gardevoir_mega.png',
-      typeColor: Colors.purpleAccent,
-      typeIcon: Icons.psychology,
       availableInMalaysia: false,
     ),
     SupportTicketData(
       name: 'Lucario',
       moveName: 'Aura Sphere (Special)',
-      moveType: 'Fighting',
+      moveType: TagType.fighting,
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/lucario_qr.png',
       imagePath: 'assets/images/lucario.png',
-      typeColor: Colors.red,
-      typeIcon: Icons.sports_martial_arts,
       availableInMalaysia: false,
     ),
     SupportTicketData(
       name: 'Sirfetch\'d',
       moveName: 'Meteor Assault (Physical)',
-      moveType: 'Fighting',
+      moveType: TagType.fighting,
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/sirfetch\'d_qr.png',
       imagePath: 'assets/images/sirfetchd.png',
-      typeColor: Colors.red,
-      typeIcon: Icons.emoji_nature,
       availableInMalaysia: true,
     ),
   ];
@@ -245,8 +226,6 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                     qrData: ticket.qrData,
                     qrImagePath: ticket.qrImagePath,
                     imagePath: ticket.imagePath,
-                    typeColor: ticket.typeColor,
-                    typeIcon: ticket.typeIcon,
                   );
                 },
               ),
@@ -261,12 +240,11 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
 class SupportTicketData {
   final String name;
   final String moveName;
-  final String moveType;
+  final TagType moveType;
   final String qrData;
   final String? qrImagePath;
   final String imagePath;
-  final Color typeColor;
-  final IconData typeIcon;
+  // typeColor and typeIcon are removed as they are derived from moveType
   final bool availableInMalaysia;
 
   SupportTicketData({
@@ -276,8 +254,6 @@ class SupportTicketData {
     required this.qrData,
     this.qrImagePath,
     required this.imagePath,
-    required this.typeColor,
-    required this.typeIcon,
     required this.availableInMalaysia,
   });
 }
@@ -285,25 +261,22 @@ class SupportTicketData {
 class _SupportTicketCard extends ConsumerWidget {
   final String name;
   final String moveName;
-  final String? moveType;
+  final TagType moveType;
   final String qrData;
   final String? qrImagePath;
   final String imagePath;
-  final Color typeColor;
-  final IconData typeIcon;
 
   const _SupportTicketCard({
     required this.name,
     required this.moveName,
-    this.moveType,
+    required this.moveType,
     required this.qrData,
     this.qrImagePath,
     required this.imagePath,
-    required this.typeColor,
-    required this.typeIcon,
   });
 
-  void _showQrDialog(BuildContext context, WidgetRef ref) async {
+  void _showQrDialog(
+      BuildContext context, WidgetRef ref, Color typeColor) async {
     // Maximize brightness
     final maxBrightness = ref.read(settingsProvider).maxBrightness;
 
@@ -351,6 +324,8 @@ class _SupportTicketCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final typeColor = moveType.color;
+
     return Container(
       height: 160,
       decoration: BoxDecoration(
@@ -457,14 +432,12 @@ class _SupportTicketCard extends ConsumerWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (moveType != null) ...[
-                              SvgPicture.asset(
-                                'assets/icons/${moveType!.toLowerCase()}.svg',
-                                height: 16,
-                                width: 16,
-                              ),
-                              const SizedBox(width: 6),
-                            ],
+                            SvgPicture.asset(
+                              moveType.iconPath,
+                              height: 16,
+                              width: 16,
+                            ),
+                            const SizedBox(width: 6),
                             Flexible(
                               child: Text(
                                 moveName,
@@ -486,7 +459,8 @@ class _SupportTicketCard extends ConsumerWidget {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: () => _showQrDialog(context, ref),
+                          onPressed: () =>
+                              _showQrDialog(context, ref, typeColor),
                           icon: const Icon(Icons.qr_code_scanner, size: 20),
                           label: const Text('SCAN TICKET'),
                           style: ElevatedButton.styleFrom(
