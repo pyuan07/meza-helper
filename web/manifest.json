@@ -1,6 +1,6 @@
 {
-    "name": "meza_helper",
-    "short_name": "meza_helper",
+    "name": "MezaHelper",
+    "short_name": "MezaHelper",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#hex",
