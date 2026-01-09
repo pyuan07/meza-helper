@@ -147,7 +147,7 @@ class _VersionView extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
-              'Mezastar 星座 第$version彈',
+              'Mezastar Version $version',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
