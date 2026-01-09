@@ -99,7 +99,6 @@ class TrainersNotifier extends StateNotifier<List<TrainerModel>> {
     for (int i = 0; i < currentList.length; i++) {
       if (currentList[i].orderIndex != i) {
         final updated = currentList[i].copyWith(orderIndex: i);
-        // Optimization: only save if changed
         await _service.saveTrainer(updated);
       }
     }

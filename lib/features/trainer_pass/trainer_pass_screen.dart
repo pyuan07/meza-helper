@@ -351,12 +351,18 @@ class _TrainerPassScreenState extends ConsumerState<TrainerPassScreen> {
                                     title: Text(
                                       trainer.name,
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                        color:
+                                            Colors.black87, // Force dark text
+                                      ),
                                     ),
                                     subtitle: Text(
                                       trainer.mezastarId,
                                       style: const TextStyle(
-                                          fontFamily: 'monospace'),
+                                        fontFamily: 'monospace',
+                                        color: Colors
+                                            .black54, // Force dark subtitle
+                                      ),
                                     ),
                                     trailing: Row(
                                       mainAxisSize: MainAxisSize.min,
@@ -614,16 +620,16 @@ class _TrainerCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 Container(
-                  padding: const EdgeInsets.all(4), // Reduced padding
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                   child: QrImageView(
                     data: trainer.mezastarId,
                     version: QrVersions.auto,
                     errorCorrectionLevel: QrErrorCorrectLevel.H,
-                    size: 220.0,
+                    size: 260.0, // Bigger size
                     backgroundColor: Colors.white,
                     padding: const EdgeInsets.all(0),
                     gapless: true,
