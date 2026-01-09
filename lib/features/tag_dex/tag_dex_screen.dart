@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'data/tag_repository.dart';
 import '../../models/tag_model.dart';
+import '../../providers/tag_provider.dart';
 import 'widgets/tag_details_modal.dart';
 
 class TagDexScreen extends ConsumerStatefulWidget {
@@ -220,17 +220,19 @@ class _TagDexScreenState extends ConsumerState<TagDexScreen>
   }
 }
 
-class _TagGrid extends StatelessWidget {
+class _TagGrid extends ConsumerWidget {
   final int version;
   final TagType? filterType;
 
   const _TagGrid({required this.version, this.filterType});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final repository = ref.watch(tagRepositoryProvider);
+    
     List<TagModel> tags = version == 0
-        ? TagRepository.getAllTags()
-        : TagRepository.getTagsByVersion(version);
+        ? repository.getAllTags()
+        : repository.getTagsByVersion(version);
 
     if (filterType != null) {
       tags = tags.where((t) => t.type == filterType).toList();

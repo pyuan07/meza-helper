@@ -3,14 +3,17 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart'; // For kIsWeb
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-// import 'package:permission_handler/permission_handler.dart'; // Unused in this file explicitly, but good to keep if needed later or removing if unused. Keeping imports as is essentially.
 
 import '../../models/trainer_model.dart';
-import '../../services/storage_service.dart';
+import '../../providers/trainer_provider.dart';
+import '../../core/responsive.dart';
+import '../../core/error_handler.dart';
+import '../../core/platform_utils.dart';
 import '../settings/settings_provider.dart';
 import '../../utils/web_qr/web_qr_main.dart';
 
@@ -29,8 +32,12 @@ class _TrainerPassScreenState extends ConsumerState<TrainerPassScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final width = MediaQuery.of(context).size.width;
-    final targetFraction = width < 600 ? 0.82 : 0.65;
+    final targetFraction = Responsive.valueWhen(
+      context: context,
+      mobile: 0.82,
+      tablet: 0.70,
+      desktop: 0.65,
+    );
 
     if (_pageController == null ||
         _pageController!.viewportFraction != targetFraction) {
@@ -69,11 +76,16 @@ class _TrainerPassScreenState extends ConsumerState<TrainerPassScreen> {
   }
 
   Future<void> _resetBrightness() async {
-    if (kIsWeb) return;
+    if (!PlatformUtils.hasBrightnessControl) return;
     try {
       await ScreenBrightness().resetScreenBrightness();
-    } catch (e) {
-      debugPrint('Failed to reset brightness: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.handle(
+        context,
+        e,
+        userMessage: 'Failed to reset brightness',
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -81,13 +93,9 @@ class _TrainerPassScreenState extends ConsumerState<TrainerPassScreen> {
     _brightnessTimer?.cancel();
     final maxBrightness = ref.read(settingsProvider).maxBrightness;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content:
-            Text('Setting brightness to ${(maxBrightness * 100).toInt()}%'),
-        duration: const Duration(milliseconds: 1000),
-        behavior: SnackBarBehavior.floating,
-      ),
+    ErrorHandler.showInfo(
+      context,
+      'Setting brightness to ${(maxBrightness * 100).toInt()}%',
     );
 
     _setBrightness(maxBrightness);
@@ -101,67 +109,26 @@ class _TrainerPassScreenState extends ConsumerState<TrainerPassScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final trainers = ref.watch(trainersProvider);
+    final trainersAsync = ref.watch(trainersProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent, // Let MainScaffold background show
-      body: Stack(
-        children: [
-          // Remove local dark background so we don't block MainScaffold gradient if desired
-          // But for QR contrast we might want a dark overlay behind just the carousel?
-          // Let's keep a partial dark overlay
-          Positioned.fill(
-            child: Container(color: Colors.black.withOpacity(0.8)),
+      body: trainersAsync.when(
+        data: (trainers) => _buildContent(trainers),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                'Error loading trainers',
+                style: TextStyle(color: Colors.red.shade300),
+              ),
+            ],
           ),
-          if (trainers.isEmpty)
-            _buildEmptyState()
-          else
-            PageView.builder(
-              controller: _pageController,
-              itemCount: trainers.length,
-              onPageChanged: (index) => _currentIndex = index,
-              // No clip to allow overflowing shadows/glows
-              clipBehavior: Clip.none,
-              itemBuilder: (context, index) {
-                return AnimatedBuilder(
-                  animation: _pageController!,
-                  builder: (context, child) {
-                    double page = 0.0;
-                    if (_pageController!.position.haveDimensions) {
-                      page = _pageController!.page ?? 0.0;
-                    }
-
-                    double value = page - index;
-                    value = (1 - (value.abs() * 0.3)).clamp(0.0, 1.0);
-
-                    final double blur = (1 - value) * 5;
-                    final double scale = value;
-                    final double opacity = value.clamp(0.5, 1.0);
-
-                    return Center(
-                      child: Transform.scale(
-                        scale: scale,
-                        child: Opacity(
-                          opacity: opacity,
-                          child: ImageFiltered(
-                            imageFilter: ui.ImageFilter.blur(
-                              sigmaX: blur,
-                              sigmaY: blur,
-                            ),
-                            child: child,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                  child: _TrainerCard(
-                    trainer: trainers[index],
-                    onBrightnessRequest: _temporarilyMaximizeBrightness,
-                  ),
-                );
-              },
-            ),
-        ],
+        ),
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 90.0),
@@ -170,6 +137,67 @@ class _TrainerPassScreenState extends ConsumerState<TrainerPassScreen> {
           child: const Icon(Icons.add),
         ),
       ),
+    );
+  }
+
+  Widget _buildContent(List<TrainerModel> trainers) {
+    return Stack(
+      children: [
+        // Remove local dark background so we don't block MainScaffold gradient if desired
+        // But for QR contrast we might want a dark overlay behind just the carousel?
+        // Let's keep a partial dark overlay
+        Positioned.fill(
+          child: Container(color: Colors.black.withOpacity(0.8)),
+        ),
+        if (trainers.isEmpty)
+          _buildEmptyState()
+        else
+          PageView.builder(
+            controller: _pageController,
+            itemCount: trainers.length,
+            onPageChanged: (index) => _currentIndex = index,
+            // No clip to allow overflowing shadows/glows
+            clipBehavior: Clip.none,
+            itemBuilder: (context, index) {
+              return AnimatedBuilder(
+                animation: _pageController!,
+                builder: (context, child) {
+                  double page = 0.0;
+                  if (_pageController!.position.haveDimensions) {
+                    page = _pageController!.page ?? 0.0;
+                  }
+
+                  double value = page - index;
+                  value = (1 - (value.abs() * 0.3)).clamp(0.0, 1.0);
+
+                  final double blur = (1 - value) * 5;
+                  final double scale = value;
+                  final double opacity = value.clamp(0.5, 1.0);
+
+                  return Center(
+                    child: Transform.scale(
+                      scale: scale,
+                      child: Opacity(
+                        opacity: opacity,
+                        child: ImageFiltered(
+                          imageFilter: ui.ImageFilter.blur(
+                            sigmaX: blur,
+                            sigmaY: blur,
+                          ),
+                          child: child,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                child: _TrainerCard(
+                  trainer: trainers[index],
+                  onBrightnessRequest: _temporarilyMaximizeBrightness,
+                ),
+              );
+            },
+          ),
+      ],
     );
   }
 
@@ -288,7 +316,8 @@ class _TrainerPassScreenState extends ConsumerState<TrainerPassScreen> {
             padding: const EdgeInsets.only(top: 8),
             child: Consumer(
               builder: (context, ref, child) {
-                final trainers = ref.watch(trainersProvider);
+                final trainersAsync = ref.watch(trainersProvider);
+
                 return Column(
                   children: [
                     // Handle bar
@@ -315,95 +344,133 @@ class _TrainerPassScreenState extends ConsumerState<TrainerPassScreen> {
                                 ),
                           ),
                           const Spacer(),
-                          Text(
-                            '${trainers.length} / 5', // Assuming max 5 or just showing count
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
+                          trainersAsync.when(
+                            data: (trainers) => Text(
+                              '${trainers.length} / 5',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            loading: () => Text(
+                              '- / 5',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            error: (_, __) => Text(
+                              '! / 5',
+                              style: TextStyle(
+                                color: Colors.red[600],
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
                     Expanded(
-                      child: trainers.isEmpty
-                          ? Center(
-                              child: Text(
-                                'No trainers yet',
-                                style: TextStyle(color: Colors.grey[500]),
+                      child: trainersAsync.when(
+                        data: (trainers) => trainers.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'No trainers yet',
+                                  style: TextStyle(color: Colors.grey[500]),
+                                ),
+                              )
+                            : ReorderableListView.builder(
+                                itemCount: trainers.length,
+                                padding: const EdgeInsets.only(bottom: 40),
+                                onReorder: (oldIndex, newIndex) {
+                                  ref
+                                      .read(trainersProvider.notifier)
+                                      .reorderTrainers(oldIndex, newIndex);
+                                },
+                                itemBuilder: (context, index) {
+                                  final trainer = trainers[index];
+                                  return Container(
+                                    key: ValueKey(trainer.id),
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[50],
+                                      borderRadius: BorderRadius.circular(16),
+                                      border:
+                                          Border.all(color: Colors.grey[200]!),
+                                    ),
+                                    child: ListTile(
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 8),
+                                      leading: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                              color: Colors.grey[200]!),
+                                        ),
+                                        child: const Icon(Icons.drag_indicator,
+                                            color: Colors.grey, size: 20),
+                                      ),
+                                      title: Text(
+                                        trainer.name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color:
+                                              Colors.black87, // Force dark text
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        trainer.mezastarId,
+                                        style: const TextStyle(
+                                          fontFamily: 'monospace',
+                                          color: Colors
+                                              .black54, // Force dark subtitle
+                                        ),
+                                      ),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(
+                                                Icons.edit_outlined,
+                                                color: Colors.blue),
+                                            onPressed: () =>
+                                                _showEditTrainerDialog(trainer),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(
+                                                Icons.delete_outline,
+                                                color: Colors.red),
+                                            onPressed: () =>
+                                                _confirmDeleteTrainer(trainer),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
-                            )
-                          : ReorderableListView.builder(
-                              itemCount: trainers.length,
-                              padding: const EdgeInsets.only(bottom: 40),
-                              onReorder: (oldIndex, newIndex) {
-                                ref
-                                    .read(trainersProvider.notifier)
-                                    .reorderTrainers(oldIndex, newIndex);
-                              },
-                              itemBuilder: (context, index) {
-                                final trainer = trainers[index];
-                                return Container(
-                                  key: ValueKey(trainer.id),
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[50],
-                                    borderRadius: BorderRadius.circular(16),
-                                    border:
-                                        Border.all(color: Colors.grey[200]!),
-                                  ),
-                                  child: ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 8),
-                                    leading: Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                            color: Colors.grey[200]!),
-                                      ),
-                                      child: const Icon(Icons.drag_indicator,
-                                          color: Colors.grey, size: 20),
-                                    ),
-                                    title: Text(
-                                      trainer.name,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color:
-                                            Colors.black87, // Force dark text
-                                      ),
-                                    ),
-                                    subtitle: Text(
-                                      trainer.mezastarId,
-                                      style: const TextStyle(
-                                        fontFamily: 'monospace',
-                                        color: Colors
-                                            .black54, // Force dark subtitle
-                                      ),
-                                    ),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.edit_outlined,
-                                              color: Colors.blue),
-                                          onPressed: () =>
-                                              _showEditTrainerDialog(trainer),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.delete_outline,
-                                              color: Colors.red),
-                                          onPressed: () =>
-                                              _confirmDeleteTrainer(trainer),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
+                        loading: () => const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                        error: (error, stack) => Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.error_outline,
+                                  size: 48, color: Colors.red),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Error loading trainers',
+                                style: TextStyle(color: Colors.red[700]),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 );
@@ -667,46 +734,48 @@ class _TrainerCard extends StatelessWidget {
                         gapless: true,
                       ),
                     ),
-                    // Brightness Button
-                    const SizedBox(height: 20),
-                    GestureDetector(
-                      onTap: onBrightnessRequest,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Colors.orange, Colors.orangeAccent],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.orange.withOpacity(0.4),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                    // Brightness Button - Only show if platform supports it
+                    if (PlatformUtils.hasBrightnessControl) ...[
+                      const SizedBox(height: 20),
+                      GestureDetector(
+                        onTap: onBrightnessRequest,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Colors.orange, Colors.orangeAccent],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                          ],
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.brightness_7, color: Colors.white),
-                            SizedBox(width: 8),
-                            Text(
-                              'MAX BRIGHTNESS',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                letterSpacing: 0.5,
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.orange.withOpacity(0.4),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.brightness_7, color: Colors.white),
+                              SizedBox(width: 8),
+                              Text(
+                                'MAX BRIGHTNESS',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'data/tags_tower_data.dart';
-import 'data/tag_repository.dart';
 import '../../models/tag_model.dart';
+import '../../providers/tag_provider.dart';
 import 'widgets/tag_details_modal.dart';
 
 class TagsTowerScreen extends StatefulWidget {
@@ -191,7 +192,7 @@ class _VersionView extends StatelessWidget {
   }
 }
 
-class _TowerColumn extends StatelessWidget {
+class _TowerColumn extends ConsumerWidget {
   final int towerNumber;
   final List<String> pokemons;
 
@@ -201,10 +202,12 @@ class _TowerColumn extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final repository = ref.watch(tagRepositoryProvider);
+    
     // Convert IDs to TagModels
     final tagModels =
-        pokemons.map((id) => TagRepository.getTagById(id)).toList();
+        pokemons.map((id) => repository.getTagById(id)).toList();
 
     return Container(
       width: 170, // Increased width

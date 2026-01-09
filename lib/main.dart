@@ -8,7 +8,7 @@ import 'features/support/support_screen.dart';
 import 'features/others/others_screen.dart';
 import 'features/z_moves/z_moves_screen.dart';
 import 'features/trainer_pass/trainer_pass_screen.dart';
-import 'services/storage_service.dart';
+import 'providers/storage_provider.dart';
 import 'package:flutter/gestures.dart';
 
 void main() async {

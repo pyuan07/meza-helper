@@ -1,4 +1,5 @@
 import '../../../models/tag_model.dart';
+import '../../../services/storage_service.dart';
 
 class _TagEntry {
   final String name;
@@ -16,7 +17,20 @@ class _TagEntry {
   });
 }
 
-class TagRepository {
+/// Repository interface for tag operations
+abstract class TagRepository {
+  List<TagModel> getTagsByVersion(int version);
+  TagModel getTagById(String id);
+  List<TagModel> getAllTags();
+  Future<void> updateTagOwnership(String id, bool isOwned);
+}
+
+/// Implementation of tag repository
+class TagRepositoryImpl implements TagRepository {
+  final StorageService _storageService;
+
+  TagRepositoryImpl(this._storageService);
+
   static final Map<String, _TagEntry> _tagData = {
     // Version 1
     '1-1-001': const _TagEntry(
@@ -273,7 +287,8 @@ class TagRepository {
     ),
   };
 
-  static List<TagModel> getTagsByVersion(int version) {
+  @override
+  List<TagModel> getTagsByVersion(int version) {
     if (version < 1 || version > 4) return [];
 
     // Generate tags 001 to 010 for the given version
@@ -302,7 +317,8 @@ class TagRepository {
     });
   }
 
-  static TagModel getTagById(String id) {
+  @override
+  TagModel getTagById(String id) {
     // ID format: 1-{ver}-{num}
     final parts = id.split('-');
     if (parts.length != 3) {
@@ -335,12 +351,28 @@ class TagRepository {
     );
   }
 
-  static List<TagModel> getAllTags() {
+  @override
+  List<TagModel> getAllTags() {
     return [
       ...getTagsByVersion(4),
       ...getTagsByVersion(3),
       ...getTagsByVersion(2),
       ...getTagsByVersion(1),
     ];
+  }
+
+  @override
+  Future<void> updateTagOwnership(String id, bool isOwned) async {
+    try {
+      final tags = _storageService.getTags();
+      final tagIndex = tags.indexWhere((tag) => tag.id == id);
+
+      if (tagIndex != -1) {
+        final updatedTag = tags[tagIndex].copyWith(isOwned: isOwned);
+        await _storageService.saveTag(updatedTag);
+      }
+    } catch (e) {
+      throw Exception('Failed to update tag ownership: $e');
+    }
   }
 }
