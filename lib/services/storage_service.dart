@@ -26,6 +26,7 @@ class StorageService {
     Hive.registerAdapter(TagModelAdapter());
     Hive.registerAdapter(TagTypeAdapter());
     Hive.registerAdapter(MechanicAdapter());
+    Hive.registerAdapter(MoveCategoryAdapter());
     Hive.registerAdapter(TrainerModelAdapter());
 
     // Open Boxes

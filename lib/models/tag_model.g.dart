@@ -21,15 +21,18 @@ class TagModelAdapter extends TypeAdapter<TagModel> {
       pokemonName: fields[1] as String,
       type: fields[2] as TagType,
       mechanic: fields[3] as Mechanic,
+      moveCategory: fields[7] as MoveCategory,
+      moveName: fields[8] as String,
       imageUrl: fields[4] as String,
       isOwned: fields[5] as bool,
+      version: fields[6] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, TagModel obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -38,10 +41,16 @@ class TagModelAdapter extends TypeAdapter<TagModel> {
       ..write(obj.type)
       ..writeByte(3)
       ..write(obj.mechanic)
+      ..writeByte(7)
+      ..write(obj.moveCategory)
+      ..writeByte(8)
+      ..write(obj.moveName)
       ..writeByte(4)
       ..write(obj.imageUrl)
       ..writeByte(5)
-      ..write(obj.isOwned);
+      ..write(obj.isOwned)
+      ..writeByte(6)
+      ..write(obj.version);
   }
 
   @override
@@ -189,6 +198,8 @@ class MechanicAdapter extends TypeAdapter<Mechanic> {
         return Mechanic.mega;
       case 3:
         return Mechanic.dynamax;
+      case 4:
+        return Mechanic.tera;
       default:
         return Mechanic.none;
     }
@@ -209,6 +220,9 @@ class MechanicAdapter extends TypeAdapter<Mechanic> {
       case Mechanic.dynamax:
         writer.writeByte(3);
         break;
+      case Mechanic.tera:
+        writer.writeByte(4);
+        break;
     }
   }
 
@@ -219,6 +233,45 @@ class MechanicAdapter extends TypeAdapter<Mechanic> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is MechanicAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class MoveCategoryAdapter extends TypeAdapter<MoveCategory> {
+  @override
+  final int typeId = 4;
+
+  @override
+  MoveCategory read(BinaryReader reader) {
+    switch (reader.readByte()) {
+      case 0:
+        return MoveCategory.physical;
+      case 1:
+        return MoveCategory.special;
+      default:
+        return MoveCategory.physical;
+    }
+  }
+
+  @override
+  void write(BinaryWriter writer, MoveCategory obj) {
+    switch (obj) {
+      case MoveCategory.physical:
+        writer.writeByte(0);
+        break;
+      case MoveCategory.special:
+        writer.writeByte(1);
+        break;
+    }
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MoveCategoryAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

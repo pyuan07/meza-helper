@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../tag_dex/tag_dex_screen.dart';
+import '../tag_dex/tags_tower_screen.dart';
 import '../settings/settings_screen.dart';
 
 class OthersScreen extends StatelessWidget {
@@ -57,6 +58,19 @@ class OthersScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                           builder: (context) => const SettingsScreen()),
+                    );
+                  },
+                ),
+                _buildMenuCard(
+                  context,
+                  title: 'Tags Tower',
+                  icon: Icons.view_column,
+                  color: Colors.purpleAccent,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const TagsTowerScreen()),
                     );
                   },
                 ),

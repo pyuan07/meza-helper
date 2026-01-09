@@ -1,128 +1,294 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Remove nested Scaffold to avoid layout conflicts with MainScaffold
-    // Use Container as the root
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.black,
-            Theme.of(context).primaryColor.withOpacity(0.2),
-            Colors.black,
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: CustomScrollView(
+        slivers: [
+          const _HomeSliverAppBar(),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                const _OfficialPortalCard(),
+                const SizedBox(height: 100), // Bottom padding
+              ]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeSliverAppBar extends StatelessWidget {
+  const _HomeSliverAppBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverAppBar(
+      expandedHeight: 140.0,
+      floating: true,
+      pinned: true,
+      backgroundColor:
+          Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9),
+      flexibleSpace: FlexibleSpaceBar(
+        centerTitle: true,
+        titlePadding: const EdgeInsets.only(bottom: 16),
+        expandedTitleScale:
+            1.0, // Keep title size constant to avoid layout shifts in complex logo
+        title: const _MezaHelperLogo(),
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Ambient background gradient
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.blue.shade900.withOpacity(0.4),
+                    Colors.black,
+                  ],
+                ),
+              ),
+            ),
+            // Decorative elements (Grid pattern)
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _GridPainter(
+                  color: Colors.blue.withOpacity(0.1),
+                  spacing: 30,
+                ),
+              ),
+            ),
           ],
         ),
       ),
-      child: ListView(
-        // Add top padding for status bar and bottom padding for BottomAppBar
-        padding: EdgeInsets.fromLTRB(
-          16,
-          MediaQuery.of(context).padding.top + 16,
-          16,
-          100, // Space for BottomAppBar
-        ),
-        children: [
-          const _AppHeaderInfo(),
-          const SizedBox(height: 24),
-          Text(
-            'LATEST EVENTS',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          const _EventCard(
-            title: 'Double Star Rating!',
-            subtitle: 'Get 2x stars this weekend.',
-            icon: Icons.star,
-            color: Colors.amber,
-          ),
-          const _EventCard(
-            title: 'New Series Launch',
-            subtitle: 'Series 4 is now available in arcades.',
-            icon: Icons.new_releases,
-            color: Colors.redAccent,
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'QUICK ACTIONS',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Row(
-            children: [
-              Expanded(
-                child: _QuickActionCard(
-                  label: 'Type Calc',
-                  icon: Icons.calculate,
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: _QuickActionCard(label: 'My Tags', icon: Icons.style),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }
 
-class _AppHeaderInfo extends StatelessWidget {
-  const _AppHeaderInfo();
+class _MezaHelperLogo extends StatelessWidget {
+  const _MezaHelperLogo();
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
-          ),
-          child: Row(
+    // Mimicking the "MezaHelper" logo from the images:
+    // - Pokeball on left
+    // - Bold text "MezaHelper" with outline
+    // - Stars and Tape Measure
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Pokeball Icon
+          Stack(
+            alignment: Alignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.2),
+                width: 24,
+                height: 24,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.info_outline, size: 30),
               ),
-              const SizedBox(width: 16),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'MezaHelper v1.0',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              const Icon(Icons.catching_pokemon, size: 28, color: Colors.red),
+            ],
+          ),
+          const SizedBox(width: 6),
+          // Text Logo
+          Stack(
+            children: [
+              // Outline
+              Text(
+                'MezaHelper',
+                style: TextStyle(
+                  fontFamily: 'Arial',
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  foreground: Paint()
+                    ..style = PaintingStyle.stroke
+                    ..strokeWidth = 4
+                    ..color = Colors.white,
+                ),
+              ),
+              // Fill
+              ShaderMask(
+                shaderCallback: (bounds) => const LinearGradient(
+                  colors: [
+                    Colors.white,
+                    Color(0xFF64B5F6)
+                  ], // White to Light Blue
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ).createShader(bounds),
+                child: const Text(
+                  'MezaHelper',
+                  style: TextStyle(
+                    fontFamily: 'Arial',
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
                   ),
-                  Text(
-                    'Welcome back, Trainer!',
-                    style: TextStyle(color: Colors.grey),
+                ),
+              ),
+            ],
+          ),
+          // Tape Measure / Ruler Icon (simulated)
+          Transform.translate(
+            offset: const Offset(-2, 8),
+            child: const Icon(Icons.straighten, size: 24, color: Colors.white),
+          ),
+          // Stars
+          Transform.translate(
+            offset: const Offset(-4, -12),
+            child: const Row(
+              children: [
+                Icon(Icons.star, size: 12, color: Colors.amber),
+                Icon(Icons.star, size: 10, color: Colors.amber),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OfficialPortalCard extends StatelessWidget {
+  const _OfficialPortalCard();
+
+  Future<void> _launchUrl() async {
+    final Uri url = Uri.parse('https://world.pokemonmezastar.com/my/');
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $url');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _launchUrl,
+      child: Container(
+        // ConstrainedBox to handle varying content sizes
+        constraints: const BoxConstraints(minHeight: 160),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).primaryColor.withOpacity(0.2),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF2A2A2A),
+              Theme.of(context).cardColor,
+            ],
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Stack(
+            children: [
+              // Glossy effect
+              Positioned(
+                top: -100,
+                left: -100,
+                child: Container(
+                  width: 300,
+                  height: 300,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        Colors.white.withOpacity(0.1),
+                        Colors.transparent,
+                      ],
+                    ),
                   ),
-                ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.secondary,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'OFFICIAL PORTAL',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Mezastar World',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Access your official account',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'OPEN NOW',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.open_in_new,
+                          color: Theme.of(context).colorScheme.secondary,
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -132,78 +298,27 @@ class _AppHeaderInfo extends StatelessWidget {
   }
 }
 
-class _EventCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
+class _GridPainter extends CustomPainter {
   final Color color;
+  final double spacing;
 
-  const _EventCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.color,
-  });
+  _GridPainter({required this.color, required this.spacing});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).primaryColor.withOpacity(0.3),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ListTile(
-        leading: Icon(icon, color: color, size: 32),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        subtitle: Text(subtitle, style: const TextStyle(color: Colors.grey)),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: Colors.grey,
-        ),
-      ),
-    );
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1;
+
+    for (double x = 0; x < size.width; x += spacing) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+
+    for (double y = 0; y < size.height; y += spacing) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
   }
-}
-
-class _QuickActionCard extends StatelessWidget {
-  final String label;
-  final IconData icon;
-
-  const _QuickActionCard({required this.label, required this.icon});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 32, color: Theme.of(context).colorScheme.secondary),
-          const SizedBox(height: 8),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

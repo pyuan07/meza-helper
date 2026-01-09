@@ -51,42 +51,49 @@ extension TagTypeExtension on TagType {
   Color get color {
     switch (this) {
       case TagType.normal:
-        return const Color(0xFFA8A77A);
+        return const Color(0xFFBFBF95);
       case TagType.fire:
-        return Colors.deepOrange; // const Color(0xFFEE8130);
+        return const Color(0xFFF29700);
       case TagType.water:
-        return Colors.blue; // const Color(0xFF6390F0);
+        return const Color(0xFF008AD5);
       case TagType.electric:
-        return const Color(0xFFF7D02C);
+        return const Color(0xFFFDCF00);
       case TagType.grass:
-        return const Color(0xFF7AC74C);
+        return const Color(0xFF8DC31C);
       case TagType.ice:
-        return Colors.cyan; // const Color(0xFF96D9D6);
+        return const Color(0xFF54C2F0);
       case TagType.fighting:
-        return Colors.red; // const Color(0xFFC22E28);
+        return const Color(0xFFE40011);
       case TagType.poison:
-        return const Color(0xFFA33EA1);
+        return const Color(0xFFA573AF);
       case TagType.ground:
-        return const Color(0xFFE2BF65);
+        return const Color(0xFFE3A754);
       case TagType.flying:
         return const Color(0xFFA98FF3);
       case TagType.psychic:
-        return Colors.pinkAccent; // const Color(0xFFF95587);
+        return const Color(0xFFEF92B9);
       case TagType.bug:
-        return const Color(0xFFA6B91A);
+        return const Color(0xFFDADE00);
       case TagType.rock:
         return const Color(0xFFB6A136);
       case TagType.ghost:
-        return Colors.deepPurple; // const Color(0xFF735797);
+        return const Color(0xFF413684);
       case TagType.dragon:
-        return const Color(0xFF6F35FC);
+        return const Color(0xFFF4D128);
       case TagType.steel:
-        return Colors.blueGrey; // const Color(0xFFB7B7CE);
+        return const Color(0xFFAFCED3);
       case TagType.dark:
-        return const Color(0xFF705746);
+        return const Color(0xFF4B4847);
       case TagType.fairy:
-        return const Color(0xFFD685AD);
+        return const Color(0xFFE95F9D);
     }
+  }
+
+  static TagType parse(String value) {
+    return TagType.values.firstWhere(
+      (e) => e.name.toLowerCase() == value.toLowerCase(),
+      orElse: () => TagType.normal,
+    );
   }
 }
 
@@ -100,6 +107,68 @@ enum Mechanic {
   mega,
   @HiveField(3)
   dynamax,
+  @HiveField(4)
+  tera,
+}
+
+extension MechanicExtension on Mechanic {
+  String get displayName {
+    switch (this) {
+      case Mechanic.none:
+        return 'None';
+      case Mechanic.zMove:
+        return 'Z-Move';
+      case Mechanic.mega:
+        return 'Mega Evolution';
+      case Mechanic.dynamax:
+        return 'Dynamax';
+      case Mechanic.tera:
+        return 'Terastal';
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case Mechanic.none:
+        return Colors.transparent;
+      case Mechanic.zMove:
+        return const Color(0xFFFDB901);
+      case Mechanic.mega:
+        return const Color(0xFF8B2FC9);
+      case Mechanic.dynamax:
+        return const Color(0xFFFF0055);
+      case Mechanic.tera:
+        return const Color(0xFF00FFE1);
+    }
+  }
+}
+
+@HiveType(typeId: 4)
+enum MoveCategory {
+  @HiveField(0)
+  physical,
+  @HiveField(1)
+  special,
+}
+
+extension MoveCategoryExtension on MoveCategory {
+  String get displayName {
+    switch (this) {
+      case MoveCategory.physical:
+        return 'Physical';
+      case MoveCategory.special:
+        return 'Special';
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case MoveCategory.physical:
+        return const Color(0xFFE84F35); // Or a specific detailed color
+      case MoveCategory.special:
+        return const Color(0xFF263957); // Or a specific detailed color
+    }
+  }
 }
 
 @HiveType(typeId: 0)
@@ -116,19 +185,31 @@ class TagModel {
   @HiveField(3)
   final Mechanic mechanic;
 
+  @HiveField(7)
+  final MoveCategory moveCategory;
+
+  @HiveField(8)
+  final String moveName;
+
   @HiveField(4)
   final String imageUrl;
 
   @HiveField(5)
   bool isOwned;
 
+  @HiveField(6)
+  final int version;
+
   TagModel({
     required this.id,
     required this.pokemonName,
     required this.type,
     required this.mechanic,
+    this.moveCategory = MoveCategory.physical,
+    this.moveName = '',
     required this.imageUrl,
     this.isOwned = false,
+    this.version = 0,
   });
 
   TagModel copyWith({
@@ -136,16 +217,22 @@ class TagModel {
     String? pokemonName,
     TagType? type,
     Mechanic? mechanic,
+    MoveCategory? moveCategory,
+    String? moveName,
     String? imageUrl,
     bool? isOwned,
+    int? version,
   }) {
     return TagModel(
       id: id ?? this.id,
       pokemonName: pokemonName ?? this.pokemonName,
       type: type ?? this.type,
       mechanic: mechanic ?? this.mechanic,
+      moveCategory: moveCategory ?? this.moveCategory,
+      moveName: moveName ?? this.moveName,
       imageUrl: imageUrl ?? this.imageUrl,
       isOwned: isOwned ?? this.isOwned,
+      version: version ?? this.version,
     );
   }
 }
