@@ -35,5 +35,20 @@
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
+  <script>
+    // Helper to scan QR from image URL (Blob URL)
+    async function scanBarcodeFromImageUrl(imageUrl) {
+      try {
+        const codeReader = new ZXing.BrowserMultiFormatReader();
+        // decodeFromImageElement would require creating an element, 
+        // decodeFromImageUrl works with url
+        const result = await codeReader.decodeFromImageUrl(imageUrl);
+        return result.text;
+      } catch (err) {
+        console.error("ZXing scan error:", err);
+        return null;
+      }
+    }
+  </script>
 </body>
 </html>

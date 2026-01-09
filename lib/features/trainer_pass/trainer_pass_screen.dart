@@ -12,6 +12,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../models/trainer_model.dart';
 import '../../services/storage_service.dart';
 import '../settings/settings_provider.dart';
+import '../../utils/web_qr/web_qr_main.dart';
 
 class TrainerPassScreen extends ConsumerStatefulWidget {
   const TrainerPassScreen({super.key});
@@ -194,11 +195,11 @@ class _TrainerPassScreenState extends ConsumerState<TrainerPassScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.sort),
-              title: const Text('Reorder Trainers'),
+              leading: const Icon(Icons.edit_note),
+              title: const Text('Manage Trainers'),
               onTap: () {
                 Navigator.pop(context);
-                _showReorderSheet();
+                _showManageTrainersSheet();
               },
             ),
           ],
@@ -250,52 +251,218 @@ class _TrainerPassScreenState extends ConsumerState<TrainerPassScreen> {
     );
   }
 
-  void _showReorderSheet() {
+  void _showManageTrainersSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.4,
-        maxChildSize: 0.9,
-        expand: false,
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
         builder: (context, scrollController) {
-          return Consumer(
-            builder: (context, ref, child) {
-              final trainers = ref.watch(trainersProvider);
-              return Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      'Reorder Trainers',
-                      style: Theme.of(context).textTheme.titleLarge,
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            padding: const EdgeInsets.only(top: 8),
+            child: Consumer(
+              builder: (context, ref, child) {
+                final trainers = ref.watch(trainersProvider);
+                return Column(
+                  children: [
+                    // Handle bar
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      height: 4,
+                      width: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: ReorderableListView.builder(
-                      itemCount: trainers.length,
-                      onReorder: (oldIndex, newIndex) {
-                        ref
-                            .read(trainersProvider.notifier)
-                            .reorderTrainers(oldIndex, newIndex);
-                      },
-                      itemBuilder: (context, index) {
-                        final trainer = trainers[index];
-                        return ListTile(
-                          key: ValueKey(trainer.id),
-                          title: Text(trainer.name),
-                          subtitle: Text(trainer.mezastarId),
-                          leading: const Icon(Icons.drag_handle),
-                        );
-                      },
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                      child: Row(
+                        children: [
+                          Text(
+                            'Manage Trainers',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '${trainers.length} / 5', // Assuming max 5 or just showing count
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              );
-            },
+                    Expanded(
+                      child: trainers.isEmpty
+                          ? Center(
+                              child: Text(
+                                'No trainers yet',
+                                style: TextStyle(color: Colors.grey[500]),
+                              ),
+                            )
+                          : ReorderableListView.builder(
+                              itemCount: trainers.length,
+                              padding: const EdgeInsets.only(bottom: 40),
+                              onReorder: (oldIndex, newIndex) {
+                                ref
+                                    .read(trainersProvider.notifier)
+                                    .reorderTrainers(oldIndex, newIndex);
+                              },
+                              itemBuilder: (context, index) {
+                                final trainer = trainers[index];
+                                return Container(
+                                  key: ValueKey(trainer.id),
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[50],
+                                    borderRadius: BorderRadius.circular(16),
+                                    border:
+                                        Border.all(color: Colors.grey[200]!),
+                                  ),
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 8),
+                                    leading: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                            color: Colors.grey[200]!),
+                                      ),
+                                      child: const Icon(Icons.drag_indicator,
+                                          color: Colors.grey, size: 20),
+                                    ),
+                                    title: Text(
+                                      trainer.name,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    subtitle: Text(
+                                      trainer.mezastarId,
+                                      style: const TextStyle(
+                                          fontFamily: 'monospace'),
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.edit_outlined,
+                                              color: Colors.blue),
+                                          onPressed: () =>
+                                              _showEditTrainerDialog(trainer),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete_outline,
+                                              color: Colors.red),
+                                          onPressed: () =>
+                                              _confirmDeleteTrainer(trainer),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                );
+              },
+            ),
           );
         },
+      ),
+    );
+  }
+
+  void _showEditTrainerDialog(TrainerModel trainer) {
+    final nameCtrl = TextEditingController(text: trainer.name);
+    final idCtrl = TextEditingController(text: trainer.mezastarId);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Trainer'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Trainer Name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: idCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Mezastar ID',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (nameCtrl.text.isNotEmpty && idCtrl.text.isNotEmpty) {
+                ref.read(trainersProvider.notifier).updateTrainer(
+                      trainer.copyWith(
+                        name: nameCtrl.text,
+                        mezastarId: idCtrl.text,
+                      ),
+                    );
+                Navigator.pop(ctx);
+              }
+            },
+            child: const Text('Save Changes'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteTrainer(TrainerModel trainer) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove Trainer?'),
+        content: Text(
+            'Are you sure you want to remove "${trainer.name}"? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () {
+              ref.read(trainersProvider.notifier).deleteTrainer(trainer.id);
+              Navigator.pop(ctx);
+            },
+            child: const Text('Remove'),
+          ),
+        ],
       ),
     );
   }
@@ -306,9 +473,18 @@ class _TrainerPassScreenState extends ConsumerState<TrainerPassScreen> {
 
     if (image == null) return;
 
-    // Check permissions if needed (usually handled by plugin, but good practice)
-    // await Permission.photos.request();
+    // WEB FALLBACK
+    if (kIsWeb) {
+      final code = await scanBarcodeFromImage(image);
+      if (code != null && mounted) {
+        _showConfirmImportDialog(code);
+      } else if (mounted) {
+        _showErrorSnackBar('No QR code found in image.');
+      }
+      return;
+    }
 
+    // NATIVE (Mobile/Desktop)
     try {
       final MobileScannerController controller = MobileScannerController();
       final BarcodeCapture? capture = await controller.analyzeImage(image.path);
@@ -436,26 +612,9 @@ class _TrainerCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'ID: ${trainer.mezastarId}',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 18,
-                    letterSpacing: 1.5,
-                    fontFeatures: const [ui.FontFeature.tabularFigures()],
-                    shadows: const [
-                      Shadow(
-                        color: Colors.black45,
-                        blurRadius: 4,
-                        offset: Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
                 Container(
-                  padding: const EdgeInsets.all(8), // Reduced padding from 12
+                  padding: const EdgeInsets.all(4), // Reduced padding
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
@@ -463,10 +622,11 @@ class _TrainerCard extends StatelessWidget {
                   child: QrImageView(
                     data: trainer.mezastarId,
                     version: QrVersions.auto,
+                    errorCorrectionLevel: QrErrorCorrectLevel.H,
                     size: 220.0,
                     backgroundColor: Colors.white,
-                    padding: const EdgeInsets.all(0), // Ensure no padding
-                    gapless: false,
+                    padding: const EdgeInsets.all(0),
+                    gapless: true,
                   ),
                 ),
                 // Brightness Button
