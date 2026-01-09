@@ -18,12 +18,10 @@ final appTheme = ThemeData(
     primary: AppColors.primary,
     secondary: AppColors.secondary,
     surface: AppColors.surface,
-    background: AppColors.background,
     error: AppColors.error,
     onPrimary: Colors.white,
     onSecondary: Colors.black,
     onSurface: AppColors.onSurface,
-    onBackground: AppColors.onBackground,
   ),
   appBarTheme: const AppBarTheme(
     backgroundColor: Colors.transparent,

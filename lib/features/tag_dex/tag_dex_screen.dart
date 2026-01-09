@@ -241,7 +241,7 @@ class _TagGrid extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off_rounded, size: 64, color: Colors.white24),
+            const Icon(Icons.search_off_rounded, size: 64, color: Colors.white24),
             const SizedBox(height: 16),
             Text(
               'No ${filterType?.displayName ?? ""} tags found',

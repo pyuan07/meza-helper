@@ -111,7 +111,7 @@ class _TagsTowerScreenState extends State<TagsTowerScreen>
         ),
         child: TabBarView(
           controller: _tabController,
-          children: [
+          children: const [
             _VersionView(version: 4),
             _VersionView(version: 3),
             _VersionView(version: 2),

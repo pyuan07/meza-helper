@@ -22,19 +22,37 @@ class TrainerPassScreen extends ConsumerStatefulWidget {
 }
 
 class _TrainerPassScreenState extends ConsumerState<TrainerPassScreen> {
-  late PageController _pageController;
+  PageController? _pageController;
   Timer? _brightnessTimer;
+  int _currentIndex = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final width = MediaQuery.of(context).size.width;
+    final targetFraction = width < 600 ? 0.82 : 0.65;
+
+    if (_pageController == null ||
+        _pageController!.viewportFraction != targetFraction) {
+      final oldPos = _pageController?.hasClients == true
+          ? _pageController?.page?.round()
+          : _currentIndex;
+      _pageController?.dispose();
+      _pageController = PageController(
+        initialPage: oldPos ?? _currentIndex,
+        viewportFraction: targetFraction,
+      );
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    // Smaller fraction to show side cards clearly (Spin effect)
-    _pageController = PageController(viewportFraction: 0.65);
   }
 
   @override
   void dispose() {
-    _pageController.dispose();
+    _pageController?.dispose();
     _brightnessTimer?.cancel();
     _resetBrightness();
     super.dispose();
@@ -101,15 +119,16 @@ class _TrainerPassScreenState extends ConsumerState<TrainerPassScreen> {
             PageView.builder(
               controller: _pageController,
               itemCount: trainers.length,
+              onPageChanged: (index) => _currentIndex = index,
               // No clip to allow overflowing shadows/glows
               clipBehavior: Clip.none,
               itemBuilder: (context, index) {
                 return AnimatedBuilder(
-                  animation: _pageController,
+                  animation: _pageController!,
                   builder: (context, child) {
                     double page = 0.0;
-                    if (_pageController.position.haveDimensions) {
-                      page = _pageController.page ?? 0.0;
+                    if (_pageController!.position.haveDimensions) {
+                      page = _pageController!.page ?? 0.0;
                     }
 
                     double value = page - index;
@@ -579,114 +598,136 @@ class _TrainerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+    // Make QR size responsive but max out at 260
+    final qrSize = MediaQuery.of(context).size.shortestSide * 0.65;
+    final displayQrSize = qrSize.clamp(200.0, 260.0);
+
     return Center(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 40),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2), // Glass effect
-              borderRadius: BorderRadius.circular(24),
-              border:
-                  Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 20,
-                  spreadRadius: 5,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+              child: Container(
+                margin: EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: isLandscape ? 10 : 10, // Minimal internal margin
                 ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  trainer.name,
-                  style: const TextStyle(
-                    color: Colors.white, // White text for contrast on dark bg
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black45,
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: QrImageView(
-                    data: trainer.mezastarId,
-                    version: QrVersions.auto,
-                    errorCorrectionLevel: QrErrorCorrectLevel.H,
-                    size: 260.0, // Bigger size
-                    backgroundColor: Colors.white,
-                    padding: const EdgeInsets.all(0),
-                    gapless: true,
-                  ),
-                ),
-                // Brightness Button
-                const SizedBox(height: 24),
-                GestureDetector(
-                  onTap: onBrightnessRequest,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Colors.orange, Colors.orangeAccent],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.orange.withOpacity(0.4),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2), // Glass effect
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                      color: Colors.white.withOpacity(0.3), width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 20,
+                      spreadRadius: 5,
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.brightness_7, color: Colors.white),
-                        SizedBox(width: 8),
-                        Text(
-                          'MAX BRIGHTNESS',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            letterSpacing: 0.5,
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      trainer.name,
+                      style: const TextStyle(
+                        color:
+                            Colors.white, // White text for contrast on dark bg
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black45,
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: QrImageView(
+                        data: trainer.mezastarId,
+                        version: QrVersions.auto,
+                        errorCorrectionLevel: QrErrorCorrectLevel.H,
+                        size: displayQrSize,
+                        backgroundColor: Colors.white,
+                        padding: const EdgeInsets.all(0),
+                        gapless: true,
+                      ),
+                    ),
+                    // Brightness Button
+                    const SizedBox(height: 20),
+                    GestureDetector(
+                      onTap: onBrightnessRequest,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Colors.orange, Colors.orangeAccent],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.orange.withOpacity(0.4),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.brightness_7, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text(
+                              'MAX BRIGHTNESS',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  'Scan at the Arcade Machine',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: 14,
-                  ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Scan at the Arcade Machine',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 14,
+              shadows: const [
+                Shadow(
+                  color: Colors.black,
+                  blurRadius: 4,
+                  offset: Offset(0, 1),
                 ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
