@@ -10,6 +10,7 @@ import 'features/z_moves/z_moves_screen.dart';
 import 'features/trainer_pass/trainer_pass_screen.dart';
 import 'providers/storage_provider.dart';
 import 'package:flutter/gestures.dart';
+import 'core/web_update_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,6 +62,15 @@ class MainScaffold extends StatefulWidget {
 class _MainScaffoldState extends State<MainScaffold> {
   int _currentIndex = 2; // Default to Home (Center)
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize Web PWA Update Manager
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      WebUpdateManager().init(context);
+    });
+  }
 
   final List<Widget> _screens = [
     const TrainerPassScreen(),

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme.dart';
 import '../../models/tag_model.dart';
 import '../settings/settings_provider.dart';
+import '../../core/platform_utils.dart';
 
 class SupportScreen extends ConsumerStatefulWidget {
   const SupportScreen({super.key});
@@ -566,6 +567,28 @@ class _FullScreenQRDialog extends StatelessWidget {
                         ),
                 ),
               ),
+              if (!PlatformUtils.hasBrightnessControl) ...[
+                const SizedBox(height: 24),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.brightness_6, color: Colors.white, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Please maximize brightness manually',
+                        style: TextStyle(color: Colors.white, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),

@@ -36,6 +36,35 @@
 <body>
   <script src="flutter_bootstrap.js" async></script>
   <script>
+    // PWA Update Notifier Logic
+    window.onUpdateAvailable = null;
+    window.triggerUpdate = function() {
+      // Force reload ignoring cache
+      window.location.reload();
+    };
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(function(reg) {
+        // Check if there is already a waiting service worker
+        if (reg.waiting) {
+          if (window.onUpdateAvailable) window.onUpdateAvailable("New version waiting");
+        }
+
+        // Listen for new updates
+        reg.addEventListener('updatefound', function() {
+          var newWorker = reg.installing;
+          newWorker.addEventListener('statechange', function() {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+               // New update available
+               console.log("New service worker installed and waiting.");
+               if (window.onUpdateAvailable) window.onUpdateAvailable("Update available");
+            }
+          });
+        });
+      });
+    }
+  </script>
+  <script>
     // Helper to scan QR from image URL (Blob URL)
     async function scanBarcodeFromImageUrl(imageUrl) {
       try {

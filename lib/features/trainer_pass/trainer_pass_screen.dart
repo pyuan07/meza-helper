@@ -776,6 +776,36 @@ class _TrainerCard extends StatelessWidget {
                         ),
                       ),
                     ],
+                    // Web/Desktop Fallback: Brightness Reminder
+                    if (!PlatformUtils.hasBrightnessControl) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.brightness_6,
+                                color: Colors.white70, size: 16),
+                            SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                'Maximize brightness manually for scanning',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
