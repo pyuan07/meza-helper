@@ -667,9 +667,9 @@ class _TrainerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
-    // Make QR size responsive but max out at 260
-    final qrSize = MediaQuery.of(context).size.shortestSide * 0.65;
-    final displayQrSize = qrSize.clamp(200.0, 260.0);
+    // Make QR size responsive but max out at 180
+    final qrSize = MediaQuery.of(context).size.shortestSide * 0.45;
+    final displayQrSize = qrSize.clamp(120.0, 180.0);
 
     return Center(
       child: Column(
@@ -727,7 +727,7 @@ class _TrainerCard extends StatelessWidget {
                       child: QrImageView(
                         data: trainer.mezastarId,
                         version: QrVersions.auto,
-                        errorCorrectionLevel: QrErrorCorrectLevel.H,
+                        errorCorrectionLevel: QrErrorCorrectLevel.L,
                         size: displayQrSize,
                         backgroundColor: Colors.white,
                         padding: const EdgeInsets.all(0),

@@ -541,8 +541,8 @@ class _FullScreenQRDialog extends StatelessWidget {
               Hero(
                 tag: 'qr_$name', // Unique tag if we animated the QR
                 child: Container(
-                  width: 300,
-                  height: 300,
+                  width: 200,
+                  height: 200,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -561,7 +561,7 @@ class _FullScreenQRDialog extends StatelessWidget {
                       : QrImageView(
                           data: qrData,
                           version: QrVersions.auto,
-                          size: 280,
+                          size: 180,
                           errorCorrectionLevel: QrErrorCorrectLevel.H,
                         ),
                 ),

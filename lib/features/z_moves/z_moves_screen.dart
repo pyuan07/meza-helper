@@ -305,8 +305,8 @@ final List<ZMoveData> _zMoves = [
     color: Colors.amber,
     sequence: [
       ZMoveDirection.right,
-      ZMoveDirection.right,
       ZMoveDirection.left,
+      ZMoveDirection.right,
       ZMoveDirection.left
     ],
   ),
