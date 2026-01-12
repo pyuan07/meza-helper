@@ -202,9 +202,9 @@ class _TagDetailsModalState extends ConsumerState<TagDetailsModal> {
                             Text(
                               liveTag.pokemonName.toUpperCase(),
                               textAlign: TextAlign.center,
-                              style: GoogleFonts.roboto(
-                                fontSize: 32,
-                                fontWeight: FontWeight.w900,
+                              style: GoogleFonts.rajdhani(
+                                fontSize: 36, // Slightly larger for Rajdhani
+                                fontWeight: FontWeight.bold,
                                 letterSpacing: 1.5,
                                 height: 1.0,
                                 color: const Color(0xFF2D3142),
