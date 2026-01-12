@@ -27,7 +27,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/gengar_qr.png',
       imagePath: 'assets/images/gengar.png',
-      availableInMalaysia: true,
+      availableRegions: ['Malaysia', 'Singapore'],
     ),
     SupportTicketData(
       name: 'Lapras',
@@ -36,7 +36,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/lapras_qr.png',
       imagePath: 'assets/images/lapras.png',
-      availableInMalaysia: true,
+      availableRegions: ['Malaysia', 'Singapore'],
     ),
     SupportTicketData(
       name: 'Mimikyu',
@@ -45,7 +45,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/mimikyu_qr.png',
       imagePath: 'assets/images/mimikyu.png',
-      availableInMalaysia: true,
+      availableRegions: ['Malaysia', 'Singapore'],
     ),
     SupportTicketData(
       name: 'Duraludon',
@@ -54,7 +54,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/duraludon_qr.png',
       imagePath: 'assets/images/duraludon.png',
-      availableInMalaysia: true,
+      availableRegions: ['Malaysia', 'Singapore'],
     ),
     SupportTicketData(
       name: 'Blastoise',
@@ -63,7 +63,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/blastoise_qr.png',
       imagePath: 'assets/images/blastoise.png',
-      availableInMalaysia: false,
+      availableRegions: ['Singapore'],
     ),
     SupportTicketData(
       name: 'Keldeo',
@@ -72,7 +72,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/keldeo_qr.png',
       imagePath: 'assets/images/keldeo.png',
-      availableInMalaysia: false,
+      availableRegions: ['Singapore'],
     ),
     SupportTicketData(
       name: 'Mega Charizard X',
@@ -81,7 +81,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/mega_charizardX_qr.png',
       imagePath: 'assets/images/charizard_x.png',
-      availableInMalaysia: false,
+      availableRegions: ['Singapore'],
     ),
     SupportTicketData(
       name: 'Mega Gardevoir',
@@ -90,7 +90,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/mega_gardevoir_qr.png',
       imagePath: 'assets/images/gardevoir_mega.png',
-      availableInMalaysia: false,
+      availableRegions: ['Singapore'],
     ),
     SupportTicketData(
       name: 'Lucario',
@@ -99,7 +99,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/lucario_qr.png',
       imagePath: 'assets/images/lucario.png',
-      availableInMalaysia: false,
+      availableRegions: ['Malaysia', 'Singapore'],
     ),
     SupportTicketData(
       name: 'Sirfetch\'d',
@@ -108,16 +108,16 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
       qrData: '',
       qrImagePath: 'assets/images/qr_codes/sirfetch\'d_qr.png',
       imagePath: 'assets/images/sirfetchd.png',
-      availableInMalaysia: true,
+      availableRegions: ['Malaysia', 'Singapore'],
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
-    final displayedTickets = settings.region == 'Malaysia'
-        ? _allTickets.where((t) => t.availableInMalaysia).toList()
-        : _allTickets;
+    final displayedTickets = _allTickets
+        .where((t) => t.availableRegions.contains(settings.region))
+        .toList();
 
     return Stack(
       children: [
@@ -246,7 +246,7 @@ class SupportTicketData {
   final String? qrImagePath;
   final String imagePath;
   // typeColor and typeIcon are removed as they are derived from moveType
-  final bool availableInMalaysia;
+  final List<String> availableRegions;
 
   SupportTicketData({
     required this.name,
@@ -255,7 +255,7 @@ class SupportTicketData {
     required this.qrData,
     this.qrImagePath,
     required this.imagePath,
-    required this.availableInMalaysia,
+    required this.availableRegions,
   });
 }
 
