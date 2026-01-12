@@ -6,6 +6,8 @@ import '../../models/tag_model.dart';
 import '../../providers/tag_provider.dart';
 import 'widgets/tag_details_modal.dart';
 
+enum TagOwnershipFilter { all, owned, missing }
+
 class TagDexScreen extends ConsumerStatefulWidget {
   const TagDexScreen({super.key});
 
@@ -30,6 +32,7 @@ class _TagDexScreenState extends ConsumerState<TagDexScreen>
   }
 
   TagType? _selectedType;
+  TagOwnershipFilter _ownershipFilter = TagOwnershipFilter.all;
 
   @override
   Widget build(BuildContext context) {
@@ -101,16 +104,100 @@ class _TagDexScreenState extends ConsumerState<TagDexScreen>
                   ],
                 ),
               ),
-              // Type Filter
+              // Filters Row
               Container(
                 height: 50,
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: TagType.values.length + 1,
+                  itemCount:
+                      TagType.values.length + 3, // +3 for Owned, Missing, All
                   itemBuilder: (context, index) {
+                    // 1. My Collection Filter
                     if (index == 0) {
+                      final isSelected =
+                          _ownershipFilter == TagOwnershipFilter.owned;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: FilterChip(
+                          showCheckmark: true,
+                          checkmarkColor:
+                              isSelected ? Colors.white : Colors.transparent,
+                          selected: isSelected,
+                          avatar: Icon(
+                            Icons.check_circle_outline_rounded,
+                            color: isSelected ? Colors.white : Colors.white70,
+                            size: 18,
+                          ),
+                          label: const Text('My Collection'),
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : Colors.white70,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                          backgroundColor: Colors.white.withOpacity(0.1),
+                          selectedColor: const Color(0xFF4CAF50), // Green
+                          onSelected: (val) {
+                            setState(() => _ownershipFilter = val
+                                ? TagOwnershipFilter.owned
+                                : TagOwnershipFilter.all);
+                          },
+                          shape: StadiumBorder(
+                            side: BorderSide(
+                              color: isSelected
+                                  ? Colors.transparent
+                                  : Colors.white10,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    // 2. Missing Filter
+                    if (index == 1) {
+                      final isSelected =
+                          _ownershipFilter == TagOwnershipFilter.missing;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 12.0),
+                        child: FilterChip(
+                          showCheckmark: true,
+                          checkmarkColor:
+                              isSelected ? Colors.white : Colors.transparent,
+                          selected: isSelected,
+                          avatar: Icon(
+                            Icons.cancel_outlined,
+                            color: isSelected ? Colors.white : Colors.white70,
+                            size: 18,
+                          ),
+                          label: const Text('Missing'),
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : Colors.white70,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                          backgroundColor: Colors.white.withOpacity(0.1),
+                          selectedColor: const Color(0xFFE57373), // Red accent
+                          onSelected: (val) {
+                            setState(() => _ownershipFilter = val
+                                ? TagOwnershipFilter.missing
+                                : TagOwnershipFilter.all);
+                          },
+                          shape: StadiumBorder(
+                            side: BorderSide(
+                              color: isSelected
+                                  ? Colors.transparent
+                                  : Colors.white10,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    // 3. All Types Filter
+                    if (index == 2) {
                       final isSelected = _selectedType == null;
                       return Padding(
                         padding: const EdgeInsets.only(right: 8.0),
@@ -137,7 +224,9 @@ class _TagDexScreenState extends ConsumerState<TagDexScreen>
                         ),
                       );
                     }
-                    final type = TagType.values[index - 1];
+
+                    // 4. Specific Type Filters
+                    final type = TagType.values[index - 3];
                     final isSelected = _selectedType == type;
                     return Padding(
                       padding: const EdgeInsets.only(right: 8.0),
@@ -208,11 +297,26 @@ class _TagDexScreenState extends ConsumerState<TagDexScreen>
         child: TabBarView(
           controller: _tabController,
           children: [
-            _TagGrid(version: 0, filterType: _selectedType),
-            _TagGrid(version: 4, filterType: _selectedType),
-            _TagGrid(version: 3, filterType: _selectedType),
-            _TagGrid(version: 2, filterType: _selectedType),
-            _TagGrid(version: 1, filterType: _selectedType),
+            _TagGrid(
+                version: 0,
+                filterType: _selectedType,
+                ownershipFilter: _ownershipFilter),
+            _TagGrid(
+                version: 4,
+                filterType: _selectedType,
+                ownershipFilter: _ownershipFilter),
+            _TagGrid(
+                version: 3,
+                filterType: _selectedType,
+                ownershipFilter: _ownershipFilter),
+            _TagGrid(
+                version: 2,
+                filterType: _selectedType,
+                ownershipFilter: _ownershipFilter),
+            _TagGrid(
+                version: 1,
+                filterType: _selectedType,
+                ownershipFilter: _ownershipFilter),
           ],
         ),
       ),
@@ -223,19 +327,28 @@ class _TagDexScreenState extends ConsumerState<TagDexScreen>
 class _TagGrid extends ConsumerWidget {
   final int version;
   final TagType? filterType;
+  final TagOwnershipFilter ownershipFilter;
 
-  const _TagGrid({required this.version, this.filterType});
+  const _TagGrid({
+    required this.version,
+    this.filterType,
+    required this.ownershipFilter,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final repository = ref.watch(tagRepositoryProvider);
-    
-    List<TagModel> tags = version == 0
-        ? repository.getAllTags()
-        : repository.getTagsByVersion(version);
+    // Watch derived provider for reactivity
+    final allTags = ref.watch(tagsByVersionProvider(version));
 
+    // Apply Local Filters
+    var tags = allTags;
     if (filterType != null) {
       tags = tags.where((t) => t.type == filterType).toList();
+    }
+    if (ownershipFilter == TagOwnershipFilter.owned) {
+      tags = tags.where((t) => t.isOwned).toList();
+    } else if (ownershipFilter == TagOwnershipFilter.missing) {
+      tags = tags.where((t) => !t.isOwned).toList();
     }
 
     if (tags.isEmpty) {
@@ -243,10 +356,22 @@ class _TagGrid extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.search_off_rounded, size: 64, color: Colors.white24),
+            Icon(
+              ownershipFilter == TagOwnershipFilter.owned
+                  ? Icons.check_circle_outline_rounded
+                  : (ownershipFilter == TagOwnershipFilter.missing
+                      ? Icons.cancel_outlined
+                      : Icons.search_off_rounded),
+              size: 64,
+              color: Colors.white24,
+            ),
             const SizedBox(height: 16),
             Text(
-              'No ${filterType?.displayName ?? ""} tags found',
+              ownershipFilter == TagOwnershipFilter.owned
+                  ? 'No owned tags found'
+                  : (ownershipFilter == TagOwnershipFilter.missing
+                      ? 'No missing tags found! Great job!'
+                      : 'No ${filterType?.displayName ?? ""} tags found'),
               style: const TextStyle(color: Colors.white54, fontSize: 16),
             ),
           ],
@@ -260,17 +385,16 @@ class _TagGrid extends ConsumerWidget {
         final int crossAxisCount = constraints.maxWidth > 600 ? 5 : 3;
 
         return GridView.builder(
-          padding: const EdgeInsets.all(
-              16), // Simplified padding as it's no longer floating
+          padding: const EdgeInsets.all(16),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
             childAspectRatio: 1.15,
-            crossAxisSpacing: 4,
-            mainAxisSpacing: 4,
+            crossAxisSpacing: 8, // Increased spacing
+            mainAxisSpacing: 8,
           ),
           itemCount: tags.length,
           itemBuilder: (context, index) {
-            return _TagCard(tag: tags[index], index: index);
+            return _TagCard(tag: tags[index]);
           },
         );
       },
@@ -280,9 +404,8 @@ class _TagGrid extends ConsumerWidget {
 
 class _TagCard extends StatelessWidget {
   final TagModel tag;
-  final int index;
 
-  const _TagCard({required this.tag, required this.index});
+  const _TagCard({required this.tag});
 
   @override
   Widget build(BuildContext context) {
@@ -301,34 +424,46 @@ class _TagCard extends StatelessWidget {
               children: [
                 Container(
                   decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withOpacity(0.2),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
                     ],
                   ),
-                  child: Image.asset(
-                    tag.imageUrl,
-                    fit: BoxFit.contain, // Maintain aspect ratio
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey[200],
-                        child: const Center(
-                          child: Icon(Icons.broken_image,
-                              size: 20, color: Colors.grey),
+                  foregroundDecoration: tag.isOwned
+                      ? null
+                      : BoxDecoration(
+                          color: Colors.black.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(8),
+                          backgroundBlendMode: BlendMode.darken,
                         ),
-                      );
-                    },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.asset(
+                      tag.imageUrl,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[200],
+                          child: const Center(
+                            child: Icon(Icons.broken_image,
+                                size: 20, color: Colors.grey),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
+                // Mechanic Badge
                 if (tag.mechanic != Mechanic.none)
                   Positioned(
-                    top: 2,
-                    right: 2,
+                    top: 4,
+                    right: 4,
                     child: Container(
-                      padding: const EdgeInsets.all(2),
+                      padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(
                         color: tag.mechanic.color,
                         shape: BoxShape.circle,
@@ -345,9 +480,29 @@ class _TagCard extends StatelessWidget {
                         tag.mechanic.name[0].toUpperCase(),
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 8,
+                          fontSize: 9,
                           fontWeight: FontWeight.bold,
                         ),
+                      ),
+                    ),
+                  ),
+                // Owned Badge
+                if (tag.isOwned)
+                  Positioned(
+                    bottom: 4,
+                    right: 4,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                          color: Color(0xFF4CAF50), // Green
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(color: Colors.black26, blurRadius: 4)
+                          ]),
+                      child: const Icon(
+                        Icons.check,
+                        size: 12,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -355,22 +510,24 @@ class _TagCard extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         // ID
         Text(
           tag.id,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 10,
+            color: tag.isOwned ? Colors.white : Colors.white60,
           ),
           textAlign: TextAlign.center,
         ),
         // Pokemon Name
         Text(
           tag.pokemonName,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 10,
-            fontWeight: FontWeight.w500, // Slightly bolder but less than ID
+            fontWeight: FontWeight.w500,
+            color: tag.isOwned ? Colors.white : Colors.white60,
           ),
           textAlign: TextAlign.center,
           maxLines: 1,

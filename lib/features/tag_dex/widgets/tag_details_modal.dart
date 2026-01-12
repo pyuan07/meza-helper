@@ -1,22 +1,24 @@
 import 'dart:convert';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart'; // Ensure google_fonts is in pubspec, otherwise fallback
 import '../../../models/tag_model.dart';
+import '../../../providers/tag_provider.dart';
 
-class TagDetailsModal extends StatefulWidget {
+class TagDetailsModal extends ConsumerStatefulWidget {
   final TagModel tag;
 
   const TagDetailsModal({super.key, required this.tag});
 
   @override
-  State<TagDetailsModal> createState() => _TagDetailsModalState();
+  ConsumerState<TagDetailsModal> createState() => _TagDetailsModalState();
 }
 
-class _TagDetailsModalState extends State<TagDetailsModal> {
+class _TagDetailsModalState extends ConsumerState<TagDetailsModal> {
   late Future<Map<String, dynamic>> _pokemonData;
   final AudioPlayer _audioPlayer = AudioPlayer();
 
@@ -88,7 +90,10 @@ class _TagDetailsModalState extends State<TagDetailsModal> {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = widget.tag.type.color;
+    // Watch the live tag state to get updates on ownership
+    final liveTag = ref.watch(tagByIdProvider(widget.tag.id)) ?? widget.tag;
+
+    final themeColor = liveTag.type.color;
     // Darker variant for text/borders
     final darkenColor = HSLColor.fromColor(themeColor)
         .withLightness(
@@ -152,7 +157,7 @@ class _TagDetailsModalState extends State<TagDetailsModal> {
                       // --- Image Section (Floating) ---
                       const SizedBox(height: 40),
                       Hero(
-                        tag: 'tag_${widget.tag.id}',
+                        tag: 'tag_${liveTag.id}',
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
@@ -176,7 +181,7 @@ class _TagDetailsModalState extends State<TagDetailsModal> {
                             SizedBox(
                               height: 240,
                               child: Image.asset(
-                                widget.tag.imageUrl,
+                                liveTag.imageUrl,
                                 fit: BoxFit.contain,
                                 errorBuilder: (_, __, ___) => Icon(
                                     Icons.broken_image,
@@ -195,7 +200,7 @@ class _TagDetailsModalState extends State<TagDetailsModal> {
                         child: Column(
                           children: [
                             Text(
-                              widget.tag.pokemonName.toUpperCase(),
+                              liveTag.pokemonName.toUpperCase(),
                               textAlign: TextAlign.center,
                               style: GoogleFonts.roboto(
                                 fontSize: 32,
@@ -213,24 +218,81 @@ class _TagDetailsModalState extends State<TagDetailsModal> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: themeColor.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(50),
-                                border: Border.all(
-                                    color: themeColor.withOpacity(0.3)),
-                              ),
-                              child: Text(
-                                widget.tag.id,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
-                                  color: darkenColor,
-                                  letterSpacing: 1.0,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: themeColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(50),
+                                    border: Border.all(
+                                        color: themeColor.withOpacity(0.3)),
+                                  ),
+                                  child: Text(
+                                    liveTag.id,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                      color: darkenColor,
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(width: 12),
+                                // Ownership Toggle
+                                GestureDetector(
+                                  onTap: () {
+                                    ref
+                                        .read(tagListProvider.notifier)
+                                        .toggleOwnership(
+                                            liveTag.id, !liveTag.isOwned);
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: liveTag.isOwned
+                                          ? const Color(0xFF4CAF50)
+                                              .withOpacity(0.15)
+                                          : Colors.grey.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(50),
+                                      border: Border.all(
+                                        color: liveTag.isOwned
+                                            ? const Color(0xFF4CAF50)
+                                            : Colors.grey.withOpacity(0.3),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          liveTag.isOwned
+                                              ? Icons.check_circle_rounded
+                                              : Icons.radio_button_unchecked,
+                                          size: 16,
+                                          color: liveTag.isOwned
+                                              ? const Color(0xFF4CAF50)
+                                              : Colors.grey,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          liveTag.isOwned ? 'OWNED' : 'MISSING',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w800,
+                                            color: liveTag.isOwned
+                                                ? const Color(0xFF4CAF50)
+                                                : Colors.grey[600],
+                                            letterSpacing: 1.0,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -284,8 +346,7 @@ class _TagDetailsModalState extends State<TagDetailsModal> {
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.center,
                                                 children: [
-                                                  _buildTypeIcon(
-                                                      widget.tag.type,
+                                                  _buildTypeIcon(liveTag.type,
                                                       size: 24),
                                                   const SizedBox(width: 10),
                                                   Expanded(
@@ -295,11 +356,11 @@ class _TagDetailsModalState extends State<TagDetailsModal> {
                                                               .start,
                                                       children: [
                                                         Text(
-                                                          widget.tag.moveName
+                                                          liveTag.moveName
                                                                   .isEmpty
                                                               ? '-'
-                                                              : widget
-                                                                  .tag.moveName,
+                                                              : liveTag
+                                                                  .moveName,
                                                           style:
                                                               const TextStyle(
                                                             color:
@@ -314,14 +375,13 @@ class _TagDetailsModalState extends State<TagDetailsModal> {
                                                               .ellipsis,
                                                         ),
                                                         Text(
-                                                          widget.tag.moveCategory ==
+                                                          liveTag.moveCategory ==
                                                                   MoveCategory
                                                                       .physical
                                                               ? '(Physical)'
                                                               : '(Special)',
                                                           style: TextStyle(
-                                                            color: widget
-                                                                .tag
+                                                            color: liveTag
                                                                 .moveCategory
                                                                 .color,
                                                             fontWeight:
