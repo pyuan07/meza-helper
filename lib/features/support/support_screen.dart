@@ -259,7 +259,7 @@ class SupportTicketData {
   });
 }
 
-class _SupportTicketCard extends ConsumerWidget {
+class _SupportTicketCard extends StatefulWidget {
   final String name;
   final String moveName;
   final TagType moveType;
@@ -275,6 +275,13 @@ class _SupportTicketCard extends ConsumerWidget {
     this.qrImagePath,
     required this.imagePath,
   });
+
+  @override
+  State<_SupportTicketCard> createState() => _SupportTicketCardState();
+}
+
+class _SupportTicketCardState extends State<_SupportTicketCard> {
+  bool _isHovered = false;
 
   void _showQrDialog(
       BuildContext context, WidgetRef ref, Color typeColor) async {
@@ -308,9 +315,9 @@ class _SupportTicketCard extends ConsumerWidget {
     await showDialog(
       context: context,
       builder: (context) => _FullScreenQRDialog(
-        name: name,
-        qrData: qrData,
-        qrImagePath: qrImagePath,
+        name: widget.name,
+        qrData: widget.qrData,
+        qrImagePath: widget.qrImagePath,
         color: typeColor,
       ),
     );
@@ -324,166 +331,194 @@ class _SupportTicketCard extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final typeColor = moveType.color;
+  Widget build(BuildContext context) {
+    final typeColor = widget.moveType.color;
 
-    return Container(
-      height: 160,
-      decoration: BoxDecoration(
-        color: Colors.black, // Fallback
-        borderRadius: BorderRadius.circular(24),
-        // Glassmorph effect
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            typeColor.withOpacity(0.15),
-            typeColor.withOpacity(0.05),
-          ],
-        ),
-        border: Border.all(color: typeColor.withOpacity(0.3), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: typeColor.withOpacity(0.1),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // Background Decor (Circle)
-          Positioned(
-            right: -30,
-            bottom: -30,
-            child: Container(
-              width: 180,
-              height: 180,
+    return Consumer(
+      builder: (context, ref, child) {
+        return MouseRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          child: GestureDetector(
+            onTap: () => _showQrDialog(context, ref, typeColor),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+              height: 160,
+              transform: Matrix4.identity()..scale(_isHovered ? 1.02 : 1.0),
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: typeColor.withOpacity(0.1),
+                color: Colors.black, // Fallback
+                borderRadius: BorderRadius.circular(24),
+                // Glassmorph effect
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    typeColor.withOpacity(0.15),
+                    typeColor.withOpacity(0.05),
+                  ],
+                ),
+                border: Border.all(
+                  color: _isHovered
+                      ? typeColor.withOpacity(0.8)
+                      : typeColor.withOpacity(0.3),
+                  width: 1.5,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: typeColor.withOpacity(0.2),
-                    blurRadius: 30,
-                    spreadRadius: 10,
+                    color: _isHovered
+                        ? typeColor.withOpacity(0.3)
+                        : typeColor.withOpacity(0.1),
+                    blurRadius: _isHovered ? 25 : 15,
+                    offset:
+                        _isHovered ? const Offset(0, 12) : const Offset(0, 8),
                   ),
                 ],
               ),
-            ),
-          ),
-
-          Row(
-            children: [
-              // Left: Pokemon Image (Hero-like)
-              Expanded(
-                flex: 5,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 8, left: 8),
-                  child: Hero(
-                    tag: 'pokemon_$name',
-                    child: Image.asset(
-                      imagePath,
-                      fit: BoxFit.contain,
-                      alignment: Alignment.centerLeft,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // Background Decor (Circle)
+                  Positioned(
+                    right: -30,
+                    bottom: -30,
+                    child: Container(
+                      width: 180,
+                      height: 180,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: typeColor.withOpacity(0.1),
+                        boxShadow: [
+                          BoxShadow(
+                            color: typeColor.withOpacity(0.2),
+                            blurRadius: 30,
+                            spreadRadius: 10,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ),
 
-              // Right: Info & Actions
-              Expanded(
-                flex: 6,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Row(
                     children: [
-                      // Name
-                      Text(
-                        name,
-                        textAlign: TextAlign.right,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
-                          shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                      // Left: Pokemon Image (Hero-like)
+                      Expanded(
+                        flex: 5,
+                        child: Padding(
+                          padding:
+                              const EdgeInsets.only(top: 8, bottom: 8, left: 8),
+                          child: Hero(
+                            tag: 'pokemon_${widget.name}',
+                            child: Image.asset(
+                              widget.imagePath,
+                              fit: BoxFit.contain,
+                              alignment: Alignment.centerLeft,
+                            ),
+                          ),
                         ),
                       ),
 
-                      const SizedBox(height: 8),
-
-                      // Move Type Badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: typeColor.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 4,
-                            )
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SvgPicture.asset(
-                              moveType.iconPath,
-                              height: 16,
-                              width: 16,
-                            ),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                moveName,
-                                overflow: TextOverflow.ellipsis,
+                      // Right: Info & Actions
+                      Expanded(
+                        flex: 6,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Name
+                              Text(
+                                widget.name,
+                                textAlign: TextAlign.right,
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.5,
+                                  shadows: [
+                                    Shadow(color: Colors.black, blurRadius: 4)
+                                  ],
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
 
-                      const Spacer(),
+                              const SizedBox(height: 8),
 
-                      // Action Button (Scan QR)
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () =>
-                              _showQrDialog(context, ref, typeColor),
-                          icon: const Icon(Icons.qr_code_scanner, size: 20),
-                          label: const Text('SCAN TICKET'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: typeColor, // Text color
-                            elevation: 4,
-                            shadowColor: typeColor.withOpacity(0.5),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
+                              // Move Type Badge
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: typeColor.withOpacity(0.8),
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.3),
+                                      blurRadius: 4,
+                                    )
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SvgPicture.asset(
+                                      widget.moveType.iconPath,
+                                      height: 16,
+                                      width: 16,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Flexible(
+                                      child: Text(
+                                        widget.moveName,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const Spacer(),
+
+                              // Action Button (Scan QR)
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: () =>
+                                      _showQrDialog(context, ref, typeColor),
+                                  icon: const Icon(Icons.qr_code_scanner,
+                                      size: 20),
+                                  label: const Text('SCAN TICKET'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: typeColor, // Text color
+                                    elevation: 4,
+                                    shadowColor: typeColor.withOpacity(0.5),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

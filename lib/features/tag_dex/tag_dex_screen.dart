@@ -402,138 +402,159 @@ class _TagGrid extends ConsumerWidget {
   }
 }
 
-class _TagCard extends StatelessWidget {
+class _TagCard extends StatefulWidget {
   final TagModel tag;
 
   const _TagCard({required this.tag});
 
   @override
+  State<_TagCard> createState() => _TagCardState();
+}
+
+class _TagCardState extends State<_TagCard> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Tag Image
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              showDialog(
-                context: context,
-                builder: (context) => TagDetailsModal(tag: tag),
-              );
-            },
-            child: Stack(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  foregroundDecoration: tag.isOwned
-                      ? null
-                      : BoxDecoration(
-                          color: Colors.black.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(8),
-                          backgroundBlendMode: BlendMode.darken,
-                        ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.asset(
-                      tag.imageUrl,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[200],
-                          child: const Center(
-                            child: Icon(Icons.broken_image,
-                                size: 20, color: Colors.grey),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                // Mechanic Badge
-                if (tag.mechanic != Mechanic.none)
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedScale(
+        scale: _isHovered ? 1.05 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        child: Column(
+          children: [
+            // Tag Image
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => TagDetailsModal(tag: widget.tag),
+                  );
+                },
+                child: Stack(
+                  children: [
+                    Container(
                       decoration: BoxDecoration(
-                        color: tag.mechanic.color,
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 2,
-                            offset: const Offset(0, 1),
+                            color: _isHovered
+                                ? Colors.black.withOpacity(0.4)
+                                : Colors.black.withOpacity(0.2),
+                            blurRadius: _isHovered ? 12 : 4,
+                            offset: _isHovered
+                                ? const Offset(0, 6)
+                                : const Offset(0, 2),
                           ),
                         ],
-                        border: Border.all(color: Colors.white, width: 1),
                       ),
-                      child: Text(
-                        tag.mechanic.name[0].toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
+                      foregroundDecoration: widget.tag.isOwned
+                          ? null
+                          : BoxDecoration(
+                              color: Colors.black.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(8),
+                              backgroundBlendMode: BlendMode.darken,
+                            ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          widget.tag.imageUrl,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey[200],
+                              child: const Center(
+                                child: Icon(Icons.broken_image,
+                                    size: 20, color: Colors.grey),
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ),
-                  ),
-                // Owned Badge
-                if (tag.isOwned)
-                  Positioned(
-                    bottom: 4,
-                    right: 4,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                          color: Color(0xFF4CAF50), // Green
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(color: Colors.black26, blurRadius: 4)
-                          ]),
-                      child: const Icon(
-                        Icons.check,
-                        size: 12,
-                        color: Colors.white,
+                    // Mechanic Badge
+                    if (widget.tag.mechanic != Mechanic.none)
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            color: widget.tag.mechanic.color,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                blurRadius: 2,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                            border: Border.all(color: Colors.white, width: 1),
+                          ),
+                          child: Text(
+                            widget.tag.mechanic.name[0].toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-              ],
+                    // Owned Badge
+                    if (widget.tag.isOwned)
+                      Positioned(
+                        bottom: 4,
+                        right: 4,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                              color: Color(0xFF4CAF50), // Green
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(color: Colors.black26, blurRadius: 4)
+                              ]),
+                          child: const Icon(
+                            Icons.check,
+                            size: 12,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
-          ),
+            const SizedBox(height: 6),
+            // ID
+            Text(
+              widget.tag.id,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 10,
+                color: widget.tag.isOwned ? Colors.white : Colors.white60,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            // Pokemon Name
+            Text(
+              widget.tag.pokemonName,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: widget.tag.isOwned ? Colors.white : Colors.white60,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
-        const SizedBox(height: 6),
-        // ID
-        Text(
-          tag.id,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 10,
-            color: tag.isOwned ? Colors.white : Colors.white60,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        // Pokemon Name
-        Text(
-          tag.pokemonName,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
-            color: tag.isOwned ? Colors.white : Colors.white60,
-          ),
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
+      ),
     );
   }
 }

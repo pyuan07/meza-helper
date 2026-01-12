@@ -132,9 +132,15 @@ class _TrainerPassScreenState extends ConsumerState<TrainerPassScreen> {
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 90.0),
-        child: FloatingActionButton(
+        child: FloatingActionButton.extended(
           onPressed: _showAddTrainerOptions,
-          child: const Icon(Icons.add),
+          icon: const Icon(Icons.add_rounded),
+          label: const Text(
+            'ADD TRAINER',
+            style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+          ),
+          backgroundColor: const Color(0xFF6C63FF),
+          elevation: 8,
         ),
       ),
     );
@@ -203,18 +209,73 @@ class _TrainerPassScreenState extends ConsumerState<TrainerPassScreen> {
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.badge, size: 80, color: Colors.grey[700]),
-          const SizedBox(height: 20),
-          const Text(
-            'No Trainers Found',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          const Text('Add your Trainer ID to get started.'),
-        ],
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        margin: const EdgeInsets.symmetric(horizontal: 32),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 20,
+              spreadRadius: 5,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white24),
+              ),
+              child: const Icon(Icons.badge_outlined,
+                  size: 64, color: Colors.white70),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'No Trainers Yet',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Add your Trainer ID to start tracking your progress and scanning at machines.',
+              textAlign: TextAlign.center,
+              style:
+                  TextStyle(color: Colors.white60, fontSize: 16, height: 1.5),
+            ),
+            const SizedBox(height: 32),
+
+            // Call to Action Button
+            ElevatedButton.icon(
+              onPressed: _showAddTrainerOptions,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('ADD TRAINER'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6C63FF),
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                elevation: 8,
+                shadowColor: const Color(0xFF6C63FF).withOpacity(0.5),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
