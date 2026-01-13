@@ -166,7 +166,7 @@ extension MoveCategoryExtension on MoveCategory {
       case MoveCategory.physical:
         return const Color(0xFFE84F35); // Or a specific detailed color
       case MoveCategory.special:
-        return const Color(0xFF263957); // Or a specific detailed color
+        return const Color(0xFF4FC3F7); // Light Blue for better visibility
     }
   }
 }

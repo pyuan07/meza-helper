@@ -16,6 +16,8 @@ import '../../core/error_handler.dart';
 import '../../core/platform_utils.dart';
 import '../settings/settings_provider.dart';
 import '../../utils/web_qr/web_qr_main.dart';
+import '../../shared/widgets/glass_container.dart';
+import '../../shared/widgets/empty_state_view.dart';
 
 class TrainerPassScreen extends ConsumerStatefulWidget {
   const TrainerPassScreen({super.key});
@@ -208,75 +210,13 @@ class _TrainerPassScreenState extends ConsumerState<TrainerPassScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(32),
-        margin: const EdgeInsets.symmetric(horizontal: 32),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 20,
-              spreadRadius: 5,
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white24),
-              ),
-              child: const Icon(Icons.badge_outlined,
-                  size: 64, color: Colors.white70),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'No Trainers Yet',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Add your Trainer ID to start tracking your progress and scanning at machines.',
-              textAlign: TextAlign.center,
-              style:
-                  TextStyle(color: Colors.white60, fontSize: 16, height: 1.5),
-            ),
-            const SizedBox(height: 32),
-
-            // Call to Action Button
-            ElevatedButton.icon(
-              onPressed: _showAddTrainerOptions,
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('ADD TRAINER'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6C63FF),
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                elevation: 8,
-                shadowColor: const Color(0xFF6C63FF).withOpacity(0.5),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return EmptyStateView(
+      icon: Icons.badge_outlined,
+      title: 'No Trainers Yet',
+      description:
+          'Add your Trainer ID to start tracking your progress and scanning at machines.',
+      buttonText: 'ADD TRAINER',
+      onButtonPressed: _showAddTrainerOptions,
     );
   }
 
@@ -736,140 +676,132 @@ class _TrainerCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ClipRRect(
+          GlassContainer(
+            margin: EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: isLandscape ? 10 : 10,
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+            blur: 15,
+            opacity: 0.2,
             borderRadius: BorderRadius.circular(24),
-            child: BackdropFilter(
-              filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-              child: Container(
-                margin: EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: isLandscape ? 10 : 10, // Minimal internal margin
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 20,
+                spreadRadius: 5,
+              ),
+            ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  trainer.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black45,
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
                 ),
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2), // Glass effect
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                      color: Colors.white.withOpacity(0.3), width: 1.5),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 20,
-                      spreadRadius: 5,
-                    ),
-                  ],
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: QrImageView(
+                    data: trainer.mezastarId,
+                    version: QrVersions.auto,
+                    errorCorrectionLevel: QrErrorCorrectLevel.L,
+                    size: displayQrSize,
+                    backgroundColor: Colors.white,
+                    padding: const EdgeInsets.all(0),
+                    gapless: true,
+                  ),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      trainer.name,
-                      style: const TextStyle(
-                        color:
-                            Colors.white, // White text for contrast on dark bg
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black45,
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
+                if (PlatformUtils.hasBrightnessControl) ...[
+                  const SizedBox(height: 20),
+                  GestureDetector(
+                    onTap: onBrightnessRequest,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Colors.orange, Colors.orangeAccent],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.orange.withOpacity(0.4),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.brightness_7, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text(
+                            'MAX BRIGHTNESS',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: QrImageView(
-                        data: trainer.mezastarId,
-                        version: QrVersions.auto,
-                        errorCorrectionLevel: QrErrorCorrectLevel.L,
-                        size: displayQrSize,
-                        backgroundColor: Colors.white,
-                        padding: const EdgeInsets.all(0),
-                        gapless: true,
-                      ),
+                  ),
+                ],
+                if (!PlatformUtils.hasBrightnessControl) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    // Brightness Button - Only show if platform supports it
-                    if (PlatformUtils.hasBrightnessControl) ...[
-                      const SizedBox(height: 20),
-                      GestureDetector(
-                        onTap: onBrightnessRequest,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 12),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Colors.orange, Colors.orangeAccent],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.brightness_6,
+                            color: Colors.white70, size: 16),
+                        SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            'Maximize brightness manually for scanning',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
                             ),
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.orange.withOpacity(0.4),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.brightness_7, color: Colors.white),
-                              SizedBox(width: 8),
-                              Text(
-                                'MAX BRIGHTNESS',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
                           ),
                         ),
-                      ),
-                    ],
-                    // Web/Desktop Fallback: Brightness Reminder
-                    if (!PlatformUtils.hasBrightnessControl) ...[
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.brightness_6,
-                                color: Colors.white70, size: 16),
-                            SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                'Maximize brightness manually for scanning',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           const SizedBox(height: 16),

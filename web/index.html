@@ -31,7 +31,7 @@
 
   <title>MezaHelper</title>
   <link rel="manifest" href="manifest.json">
-  <script src="https://unpkg.com/@zxing/library@0.20.0"></script>
+  <script src="https://unpkg.com/@zxing/library@0.20.0" defer></script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
@@ -53,6 +53,18 @@
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
+        
+        // 0. Pre-warm the ZXing reader so it's ready when the user clicks scan
+        // We use a small timeout to not compete with initial Flutter rendering
+        setTimeout(() => {
+           try {
+             getZxReader();
+             console.log("ZXing Scanner pre-warmed.");
+           } catch(e) {
+             console.log("ZXing pre-warm failed (might load later):", e);
+           }
+        }, 3000);
+
         navigator.serviceWorker.getRegistration().then(function(reg) {
           if (!reg) return;
           
@@ -87,13 +99,28 @@
     }
   </script>
   <script>
+    // Global reader instance to prevent re-initialization cost on every scan
+    let zxingReader = null;
+
+    function getZxReader() {
+      if (!zxingReader && window.ZXing) {
+        zxingReader = new ZXing.BrowserMultiFormatReader();
+      }
+      return zxingReader;
+    }
+
     // Helper to scan QR from image URL (Blob URL)
     async function scanBarcodeFromImageUrl(imageUrl) {
+      const reader = getZxReader();
+      if (!reader) {
+        console.error("ZXing library not loaded or failed to initialize.");
+        return null;
+      }
+      
       try {
-        const codeReader = new ZXing.BrowserMultiFormatReader();
         // decodeFromImageElement would require creating an element, 
         // decodeFromImageUrl works with url
-        const result = await codeReader.decodeFromImageUrl(imageUrl);
+        const result = await reader.decodeFromImageUrl(imageUrl);
         return result.text;
       } catch (err) {
         console.error("ZXing scan error:", err);

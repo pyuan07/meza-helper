@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../models/tag_model.dart';
 import '../../providers/tag_provider.dart';
 import 'widgets/tag_details_modal.dart';
+import '../../shared/widgets/glass_capsule.dart';
+import '../../shared/widgets/type_icon.dart';
+import '../../shared/widgets/empty_state_view.dart';
+import '../../shared/widgets/glass_container.dart';
 
 enum TagOwnershipFilter { all, owned, missing }
 
@@ -25,44 +28,48 @@ class _TagDexScreenState extends ConsumerState<TagDexScreen>
     _tabController = TabController(length: 5, vsync: this);
   }
 
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+
   @override
   void dispose() {
     _tabController.dispose();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
   final Set<TagType> _selectedTypes = {};
+  final Set<Mechanic> _selectedMechanics = {};
+  MoveCategory? _selectedMoveCategory;
+
   TagOwnershipFilter _ownershipFilter = TagOwnershipFilter.all;
   bool _isFilterExpanded = false;
 
-  Widget _buildTypeIcon(TagType type, {bool isSelected = false}) {
-    return SvgPicture.asset(
-      type.iconPath,
-      width: 16,
-      height: 16,
-      colorFilter: ColorFilter.mode(
-        isSelected ? Colors.white : type.color,
-        BlendMode.srcIn,
-      ),
-      placeholderBuilder: (_) => Icon(
-        Icons.circle,
-        color: isSelected ? Colors.white : type.color,
-        size: 16,
-      ),
-    );
+  void _resetFilters() {
+    setState(() {
+      _selectedTypes.clear();
+      _selectedMechanics.clear();
+      _selectedMoveCategory = null;
+      _ownershipFilter = TagOwnershipFilter.all;
+      _searchController.clear();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: false,
+      extendBodyBehindAppBar:
+          false, // Changed to false to avoid body overlapping
+      resizeToAvoidBottomInset: false, // Prevent keyboard from resizing body
       appBar: AppBar(
         title: const Text(
           'Tag Dex',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors
+            .transparent, // We will use a container in flexibleSpace for gradient
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle.light,
         flexibleSpace: Container(
@@ -71,24 +78,64 @@ class _TagDexScreenState extends ConsumerState<TagDexScreen>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.black.withOpacity(0.8),
-                Colors.transparent,
+                Colors.black.withOpacity(0.9), // Darker for better contrast
+                const Color(0xFF1A1A2E),
               ],
             ),
           ),
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(110),
+          preferredSize: const Size.fromHeight(110), // Adjusted height
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
+              // Search Bar
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: GlassContainer(
+                  padding: EdgeInsets.zero,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    height: 48,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: TextField(
+                      controller: _searchController,
+                      focusNode: _searchFocusNode,
+                      style: const TextStyle(color: Colors.white),
+                      cursorColor: const Color(0xFF6C63FF),
+                      decoration: InputDecoration(
+                        hintText: 'Search Pokémon...',
+                        hintStyle:
+                            TextStyle(color: Colors.white.withOpacity(0.4)),
+                        prefixIcon: Icon(Icons.search,
+                            color: Colors.white.withOpacity(0.4)),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear,
+                                    color: Colors.white70),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() {});
+                                },
+                              )
+                            : null,
+                        border: InputBorder.none,
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onChanged: (value) => setState(() {}),
+                    ),
+                  ),
+                ),
+              ),
               // Version Tabs
               Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.05)),
                 ),
                 child: TabBar(
                   controller: _tabController,
@@ -111,7 +158,7 @@ class _TagDexScreenState extends ConsumerState<TagDexScreen>
                     ],
                   ),
                   labelColor: Colors.white,
-                  unselectedLabelColor: Colors.white60,
+                  unselectedLabelColor: Colors.white54,
                   labelStyle: const TextStyle(fontWeight: FontWeight.bold),
                   tabs: const [
                     Tab(text: 'ALL'),
@@ -140,13 +187,11 @@ class _TagDexScreenState extends ConsumerState<TagDexScreen>
         ),
         child: Column(
           children: [
-            // Filters Section (Moved from AppBar, Accordion Style)
+            // Filters Section (Accordion Style)
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOutCubic,
-              margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
-                // Much darker background when expanded for readability
                 color: _isFilterExpanded
                     ? const Color(0xFF0F172A).withOpacity(0.95)
                     : Colors.transparent,
@@ -174,48 +219,91 @@ class _TagDexScreenState extends ConsumerState<TagDexScreen>
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: [
-                                if (_ownershipFilter != TagOwnershipFilter.all)
-                                  Padding(
-                                    padding: const EdgeInsets.only(right: 8),
-                                    child: _buildGlassFilterCapsule(
-                                      isSelected: true,
-                                      label: _ownershipFilter ==
-                                              TagOwnershipFilter.owned
-                                          ? 'Collection'
-                                          : 'Missing',
-                                      icon: _ownershipFilter ==
-                                              TagOwnershipFilter.owned
-                                          ? Icons.check_circle_outline_rounded
-                                          : Icons.cancel_outlined,
-                                      color: _ownershipFilter ==
-                                              TagOwnershipFilter.owned
-                                          ? const Color(0xFF4CAF50)
-                                          : const Color(0xFFE57373),
-                                      onTap: () => setState(() =>
-                                          _ownershipFilter =
-                                              TagOwnershipFilter.all),
+                                if (_isFilterExpanded)
+                                  const Text(
+                                    'Advanced Filters',
+                                    style: TextStyle(
+                                        color: Colors.white70,
+                                        fontWeight: FontWeight.bold),
+                                  )
+                                else ...[
+                                  // Ownership
+                                  if (_ownershipFilter !=
+                                      TagOwnershipFilter.all)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: GlassCapsule(
+                                        isSelected: true,
+                                        label: _ownershipFilter ==
+                                                TagOwnershipFilter.owned
+                                            ? 'Collection'
+                                            : 'Missing',
+                                        icon: _ownershipFilter ==
+                                                TagOwnershipFilter.owned
+                                            ? Icons.check_circle_outline_rounded
+                                            : Icons.cancel_outlined,
+                                        color: _ownershipFilter ==
+                                                TagOwnershipFilter.owned
+                                            ? const Color(0xFF4CAF50)
+                                            : const Color(0xFFE57373),
+                                        onTap: () => setState(() =>
+                                            _ownershipFilter =
+                                                TagOwnershipFilter.all),
+                                      ),
+                                    ),
+                                  // Mechanics
+                                  ..._selectedMechanics.map((m) => Padding(
+                                        padding:
+                                            const EdgeInsets.only(right: 8),
+                                        child: GlassCapsule(
+                                            isSelected: true,
+                                            label: m.displayName,
+                                            icon: Icons.bolt,
+                                            color: m.color,
+                                            onTap: () => setState(() =>
+                                                _selectedMechanics.remove(m))),
+                                      )),
+                                  // Types
+                                  ..._selectedTypes.map(
+                                    (type) => Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: GlassCapsule(
+                                        isSelected: true,
+                                        label: type.displayName,
+                                        iconWidget: TypeIcon(
+                                            type: type, isSelected: true),
+                                        color: type.color,
+                                        onTap: () => setState(
+                                            () => _selectedTypes.remove(type)),
+                                      ),
                                     ),
                                   ),
-                                ..._selectedTypes.map(
-                                  (type) => Padding(
-                                    padding: const EdgeInsets.only(right: 8),
-                                    child: _buildGlassFilterCapsule(
-                                      isSelected: true,
-                                      label: type.displayName,
-                                      iconWidget: _buildTypeIcon(type,
-                                          isSelected: true),
-                                      color: type.color,
-                                      onTap: () => setState(
-                                          () => _selectedTypes.remove(type)),
+                                  // Move Category
+                                  if (_selectedMoveCategory != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: GlassCapsule(
+                                        isSelected: true,
+                                        label:
+                                            _selectedMoveCategory!.displayName,
+                                        icon: _selectedMoveCategory ==
+                                                MoveCategory.physical
+                                            ? Icons.fitness_center
+                                            : Icons.auto_awesome,
+                                        color: _selectedMoveCategory!.color,
+                                        onTap: () => setState(
+                                            () => _selectedMoveCategory = null),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                                if (_ownershipFilter ==
+                                ],
+                                if (!_isFilterExpanded &&
+                                    _ownershipFilter ==
                                         TagOwnershipFilter.all &&
                                     _selectedTypes.isEmpty &&
-                                    !_isFilterExpanded)
+                                    _selectedMechanics.isEmpty &&
+                                    _selectedMoveCategory == null)
                                   Text(
-                                    'Showing All Tags',
+                                    'Filter Tags...',
                                     style: TextStyle(
                                         color: Colors.white.withOpacity(0.5),
                                         fontSize: 12),
@@ -224,19 +312,23 @@ class _TagDexScreenState extends ConsumerState<TagDexScreen>
                             ),
                           ),
                         ),
+                        // Reset Button (if filters active)
+                        if (_ownershipFilter != TagOwnershipFilter.all ||
+                            _selectedTypes.isNotEmpty ||
+                            _selectedMechanics.isNotEmpty ||
+                            _selectedMoveCategory != null)
+                          IconButton(
+                              onPressed: _resetFilters,
+                              icon: const Icon(Icons.refresh,
+                                  color: Colors.white54, size: 20)),
                         // Toggle Button
                         GestureDetector(
                           onTap: () => setState(
                               () => _isFilterExpanded = !_isFilterExpanded),
-                          child: Container(
+                          child: GlassContainer(
+                            borderRadius: BorderRadius.circular(20),
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                  color: Colors.white.withOpacity(0.1)),
-                            ),
                             child: Row(
                               children: [
                                 Text(
@@ -273,22 +365,16 @@ class _TagDexScreenState extends ConsumerState<TagDexScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Divider(color: Colors.white10),
+
+                          // SECTION: OWNERSHIP
                           const SizedBox(height: 8),
-                          // Ownership Section
-                          const Text(
-                            'OWNERSHIP',
-                            style: TextStyle(
-                                color: Colors.white54,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.0),
-                          ),
+                          _buildFilterSectionTitle('OWNERSHIP'),
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
                             children: [
-                              _buildGlassFilterCapsule(
+                              GlassCapsule(
                                 isSelected: _ownershipFilter ==
                                     TagOwnershipFilter.owned,
                                 label: 'My Collection',
@@ -299,7 +385,7 @@ class _TagDexScreenState extends ConsumerState<TagDexScreen>
                                         ? TagOwnershipFilter.all
                                         : TagOwnershipFilter.owned),
                               ),
-                              _buildGlassFilterCapsule(
+                              GlassCapsule(
                                 isSelected: _ownershipFilter ==
                                     TagOwnershipFilter.missing,
                                 label: 'Missing',
@@ -313,19 +399,68 @@ class _TagDexScreenState extends ConsumerState<TagDexScreen>
                               ),
                             ],
                           ),
+
+                          // SECTION: MECHANICS
                           const SizedBox(height: 16),
-                          // Types Section
+                          _buildFilterSectionTitle('MECHANICS'),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: Mechanic.values
+                                .where((m) => m != Mechanic.none)
+                                .map((m) {
+                              final isSelected = _selectedMechanics.contains(m);
+                              return GlassCapsule(
+                                isSelected: isSelected,
+                                label: m.displayName,
+                                icon: Icons
+                                    .bolt, // Use a generic bolt or specific icons if available
+                                color: m.color,
+                                onTap: () => setState(() {
+                                  if (isSelected) {
+                                    _selectedMechanics.remove(m);
+                                  } else {
+                                    _selectedMechanics.add(m);
+                                  }
+                                }),
+                              );
+                            }).toList(),
+                          ),
+
+                          // SECTION: MOVE CATEGORY
+                          const SizedBox(height: 16),
+                          _buildFilterSectionTitle('MOVE CATEGORY'),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: MoveCategory.values.map((c) {
+                              final isSelected = _selectedMoveCategory == c;
+                              return GlassCapsule(
+                                isSelected: isSelected,
+                                label: c.displayName,
+                                icon: c == MoveCategory.physical
+                                    ? Icons.fitness_center
+                                    : Icons.auto_awesome,
+                                color: c.color,
+                                onTap: () => setState(() {
+                                  if (isSelected) {
+                                    _selectedMoveCategory = null;
+                                  } else {
+                                    _selectedMoveCategory = c;
+                                  }
+                                }),
+                              );
+                            }).toList(),
+                          ),
+
+                          // SECTION: TYPES
+                          const SizedBox(height: 16),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'POKEMON TYPES',
-                                style: TextStyle(
-                                    color: Colors.white54,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.0),
-                              ),
+                              _buildFilterSectionTitle('POKEMON TYPES'),
                               if (_selectedTypes.isNotEmpty)
                                 GestureDetector(
                                   onTap: () =>
@@ -344,11 +479,11 @@ class _TagDexScreenState extends ConsumerState<TagDexScreen>
                             runSpacing: 8,
                             children: TagType.values.map((type) {
                               final isSelected = _selectedTypes.contains(type);
-                              return _buildGlassFilterCapsule(
+                              return GlassCapsule(
                                 isSelected: isSelected,
                                 label: type.displayName,
-                                iconWidget: _buildTypeIcon(type,
-                                    isSelected: isSelected),
+                                iconWidget: TypeIcon(
+                                    type: type, isSelected: isSelected),
                                 color: type.color,
                                 onTap: () => setState(() {
                                   if (isSelected) {
@@ -371,27 +506,44 @@ class _TagDexScreenState extends ConsumerState<TagDexScreen>
             Expanded(
               child: TabBarView(
                 controller: _tabController,
+                physics:
+                    const NeverScrollableScrollPhysics(), // Disable swipe to avoid conflict with horizontal scrolling
                 children: [
                   _TagGrid(
                       version: 0,
                       filterTypes: _selectedTypes,
-                      ownershipFilter: _ownershipFilter),
+                      ownershipFilter: _ownershipFilter,
+                      searchQuery: _searchController.text,
+                      filterMechanics: _selectedMechanics,
+                      filterMoveCategory: _selectedMoveCategory),
                   _TagGrid(
                       version: 4,
                       filterTypes: _selectedTypes,
-                      ownershipFilter: _ownershipFilter),
+                      ownershipFilter: _ownershipFilter,
+                      searchQuery: _searchController.text,
+                      filterMechanics: _selectedMechanics,
+                      filterMoveCategory: _selectedMoveCategory),
                   _TagGrid(
                       version: 3,
                       filterTypes: _selectedTypes,
-                      ownershipFilter: _ownershipFilter),
+                      ownershipFilter: _ownershipFilter,
+                      searchQuery: _searchController.text,
+                      filterMechanics: _selectedMechanics,
+                      filterMoveCategory: _selectedMoveCategory),
                   _TagGrid(
                       version: 2,
                       filterTypes: _selectedTypes,
-                      ownershipFilter: _ownershipFilter),
+                      ownershipFilter: _ownershipFilter,
+                      searchQuery: _searchController.text,
+                      filterMechanics: _selectedMechanics,
+                      filterMoveCategory: _selectedMoveCategory),
                   _TagGrid(
                       version: 1,
                       filterTypes: _selectedTypes,
-                      ownershipFilter: _ownershipFilter),
+                      ownershipFilter: _ownershipFilter,
+                      searchQuery: _searchController.text,
+                      filterMechanics: _selectedMechanics,
+                      filterMoveCategory: _selectedMoveCategory),
                 ],
               ),
             ),
@@ -401,71 +553,14 @@ class _TagDexScreenState extends ConsumerState<TagDexScreen>
     );
   }
 
-  Widget _buildGlassFilterCapsule({
-    required bool isSelected,
-    required String label,
-    IconData? icon,
-    Widget? iconWidget,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8.0),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(30),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? color.withOpacity(0.8)
-                  : Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(
-                color: isSelected
-                    ? Colors.transparent
-                    : Colors.white.withOpacity(0.1),
-              ),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: color.withOpacity(0.4),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      )
-                    ]
-                  : [],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (icon != null) ...[
-                  Icon(
-                    icon,
-                    size: 18,
-                    color: isSelected ? Colors.white : Colors.white70,
-                  ),
-                  const SizedBox(width: 6),
-                ] else if (iconWidget != null) ...[
-                  iconWidget,
-                  const SizedBox(width: 6),
-                ],
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.white70,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+  Widget _buildFilterSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+          color: Colors.white54,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.0),
     );
   }
 }
@@ -474,11 +569,17 @@ class _TagGrid extends ConsumerWidget {
   final int version;
   final Set<TagType> filterTypes;
   final TagOwnershipFilter ownershipFilter;
+  final String searchQuery;
+  final Set<Mechanic> filterMechanics;
+  final MoveCategory? filterMoveCategory;
 
   const _TagGrid({
     required this.version,
     required this.filterTypes,
     required this.ownershipFilter,
+    required this.searchQuery,
+    required this.filterMechanics,
+    required this.filterMoveCategory,
   });
 
   @override
@@ -488,9 +589,33 @@ class _TagGrid extends ConsumerWidget {
 
     // Apply Local Filters
     var tags = allTags;
+
+    // Search Filter
+    if (searchQuery.isNotEmpty) {
+      final query = searchQuery.toLowerCase();
+      tags = tags
+          .where((t) =>
+              t.pokemonName.toLowerCase().contains(query) ||
+              t.id.toLowerCase().contains(query))
+          .toList();
+    }
+
+    // Type Filter
     if (filterTypes.isNotEmpty) {
       tags = tags.where((t) => filterTypes.contains(t.type)).toList();
     }
+
+    // Mechanic Filter
+    if (filterMechanics.isNotEmpty) {
+      tags = tags.where((t) => filterMechanics.contains(t.mechanic)).toList();
+    }
+
+    // Move Category Filter
+    if (filterMoveCategory != null) {
+      tags = tags.where((t) => t.moveCategory == filterMoveCategory).toList();
+    }
+
+    // Ownership Filter
     if (ownershipFilter == TagOwnershipFilter.owned) {
       tags = tags.where((t) => t.isOwned).toList();
     } else if (ownershipFilter == TagOwnershipFilter.missing) {
@@ -500,10 +625,13 @@ class _TagGrid extends ConsumerWidget {
     if (tags.isEmpty) {
       // Helper text for empty state
       String emptyText = 'No tags found';
+      IconData icon = Icons.search_off_rounded;
       if (ownershipFilter == TagOwnershipFilter.owned) {
         emptyText = 'No owned tags found';
+        icon = Icons.check_circle_outline_rounded;
       } else if (ownershipFilter == TagOwnershipFilter.missing) {
         emptyText = 'No missing tags found! Great job!';
+        icon = Icons.cancel_outlined;
       } else if (filterTypes.isNotEmpty) {
         // Show up to 2 types in the message, or "X Selected Types"
         final typeNames =
@@ -512,26 +640,10 @@ class _TagGrid extends ConsumerWidget {
         emptyText = 'No $typeNames$suffix tags found';
       }
 
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              ownershipFilter == TagOwnershipFilter.owned
-                  ? Icons.check_circle_outline_rounded
-                  : (ownershipFilter == TagOwnershipFilter.missing
-                      ? Icons.cancel_outlined
-                      : Icons.search_off_rounded),
-              size: 64,
-              color: Colors.white24,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              emptyText,
-              style: const TextStyle(color: Colors.white54, fontSize: 16),
-            ),
-          ],
-        ),
+      return EmptyStateView(
+        icon: icon,
+        title: emptyText,
+        iconColor: Colors.white24,
       );
     }
 
@@ -589,16 +701,15 @@ class _StaggeredSlideFadeState extends State<_StaggeredSlideFade>
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
 
-    _offset =
-        Tween<Offset>(begin: const Offset(0.0, 0.1), end: Offset.zero).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    _offset = Tween<Offset>(begin: const Offset(0.0, 0.2), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
-    // Stagger based on index
-    // Cap delay to prevent long waits on large lists
-    final delay = (widget.index * 50).clamp(0, 1000);
-    Future.delayed(Duration(milliseconds: delay), () {
-      if (mounted) _controller.forward();
+    // Staggered start
+    final delay = Duration(milliseconds: (widget.index * 50).clamp(0, 1000));
+    Future.delayed(delay, () {
+      if (mounted) {
+        _controller.forward();
+      }
     });
   }
 
@@ -620,155 +731,161 @@ class _StaggeredSlideFadeState extends State<_StaggeredSlideFade>
   }
 }
 
-class _TagCard extends StatefulWidget {
+class _TagCard extends ConsumerWidget {
   final TagModel tag;
 
   const _TagCard({required this.tag});
 
   @override
-  State<_TagCard> createState() => _TagCardState();
-}
-
-class _TagCardState extends State<_TagCard> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedScale(
-        scale: _isHovered ? 1.05 : 1.0,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        child: Column(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return GestureDetector(
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => TagDetailsModal(tag: tag),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: tag.type.color.withOpacity(0.3),
+            width: 1.5,
+          ),
+        ),
+        child: Stack(
           children: [
-            // Tag Image
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => TagDetailsModal(tag: widget.tag),
-                  );
-                },
-                child: Stack(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _isHovered
-                                ? Colors.black.withOpacity(0.4)
-                                : Colors.black.withOpacity(0.2),
-                            blurRadius: _isHovered ? 12 : 4,
-                            offset: _isHovered
-                                ? const Offset(0, 6)
-                                : const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      foregroundDecoration: widget.tag.isOwned
-                          ? null
-                          : BoxDecoration(
-                              color: Colors.black.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(8),
-                              backgroundBlendMode: BlendMode.darken,
-                            ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.asset(
-                          widget.tag.imageUrl,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.grey[200],
-                              child: const Center(
-                                child: Icon(Icons.broken_image,
-                                    size: 20, color: Colors.grey),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    // Mechanic Badge
-                    if (widget.tag.mechanic != Mechanic.none)
-                      Positioned(
-                        top: 4,
-                        right: 4,
-                        child: Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: BoxDecoration(
-                            color: widget.tag.mechanic.color,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
-                                blurRadius: 2,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
-                            border: Border.all(color: Colors.white, width: 1),
-                          ),
-                          child: Text(
-                            widget.tag.mechanic.name[0].toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    // Owned Badge
-                    if (widget.tag.isOwned)
-                      Positioned(
-                        bottom: 4,
-                        right: 4,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(
-                              color: Color(0xFF4CAF50), // Green
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(color: Colors.black26, blurRadius: 4)
-                              ]),
-                          child: const Icon(
-                            Icons.check,
-                            size: 12,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                  ],
+            // Gradient Background
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      tag.type.color.withOpacity(0.1),
+                      Colors.transparent,
+                    ],
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 6),
-            // ID
-            Text(
-              widget.tag.id,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 10,
-                color: widget.tag.isOwned ? Colors.white : Colors.white60,
+            // Pokemon Image
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Hero(
+                  tag: 'tag_image_${tag.id}',
+                  child: Image.asset(
+                    tag.imageUrl,
+                    fit: BoxFit.contain,
+                    color: tag.isOwned ? null : Colors.black.withOpacity(0.3),
+                    colorBlendMode: tag.isOwned ? null : BlendMode.darken,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.broken_image, color: Colors.white30),
+                  ),
+                ),
               ),
-              textAlign: TextAlign.center,
             ),
-            // Pokemon Name
-            Text(
-              widget.tag.pokemonName,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: widget.tag.isOwned ? Colors.white : Colors.white60,
+            // ID Badge
+            Positioned(
+              top: 4,
+              left: 4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black45,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  tag.id,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            ),
+            // Owned Indicator
+            if (tag.isOwned)
+              Positioned(
+                top: 4,
+                right: 4,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF4CAF50), // Green for owned
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check, size: 12, color: Colors.white),
+                ),
+              ),
+            // Version Badge
+            Positioned(
+              bottom: 4,
+              right: 4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.blueGrey.withOpacity(0.8),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  'Ver ${tag.version}',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w500),
+                ),
+              ),
+            ),
+            // Type Icon & Mechanic Badge (Bottom Left)
+            Positioned(
+              bottom: 4,
+              left: 4,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TypeIcon(
+                    type: tag.type,
+                    size: 14,
+                  ),
+                  if (tag.mechanic != Mechanic.none) ...[
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: tag.mechanic.color,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1),
+                        boxShadow: [
+                          BoxShadow(
+                            color: tag.mechanic.color.withOpacity(0.5),
+                            blurRadius: 4,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      width: 16,
+                      height: 16,
+                      alignment: Alignment.center,
+                      child: Text(
+                        tag.mechanic.displayName[0].toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ],
         ),

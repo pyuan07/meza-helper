@@ -455,6 +455,65 @@ class _TagDetailsModalState extends ConsumerState<TagDetailsModal> {
                                   ),
                                 ),
 
+                                // --- Mechanic Card (If applicable) ---
+                                if (liveTag.mechanic != Mechanic.none) ...[
+                                  const SizedBox(height: 12),
+                                  _buildInfoCard(
+                                    title: 'MECHANIC',
+                                    color: liveTag.mechanic.color,
+                                    expandContent: false,
+                                    content: Row(
+                                      children: [
+                                        Container(
+                                          width: 32,
+                                          height: 32,
+                                          decoration: BoxDecoration(
+                                            color: liveTag.mechanic.color,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                                color: Colors.white, width: 2),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: liveTag.mechanic.color
+                                                    .withOpacity(0.5),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            liveTag.mechanic.displayName[0]
+                                                .toUpperCase(),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          liveTag.mechanic.displayName,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                            color: Colors.black87,
+                                            shadows: [
+                                              Shadow(
+                                                color: liveTag.mechanic.color
+                                                    .withOpacity(0.3),
+                                                blurRadius: 10,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+
                                 const SizedBox(height: 32),
 
                                 // Action Button (Cry)
@@ -555,6 +614,7 @@ class _TagDetailsModalState extends ConsumerState<TagDetailsModal> {
     required String title,
     required Color color,
     required Widget content,
+    bool expandContent = true,
   }) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -584,7 +644,7 @@ class _TagDetailsModalState extends ConsumerState<TagDetailsModal> {
             ),
           ),
           const SizedBox(height: 12),
-          Expanded(child: content),
+          if (expandContent) Expanded(child: content) else content,
         ],
       ),
     );
