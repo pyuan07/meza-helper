@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'features/settings/settings_provider.dart';
 import 'core/theme.dart';
@@ -14,6 +15,14 @@ import 'core/pwa/pwa_update_listener.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Set default system UI overlay style
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light, // For dark background
+    systemNavigationBarColor: AppColors.background,
+    systemNavigationBarIconBrightness: Brightness.light,
+  ));
 
   final container = ProviderContainer();
   final storageService = container.read(storageServiceProvider);
