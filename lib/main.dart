@@ -10,7 +10,7 @@ import 'features/z_moves/z_moves_screen.dart';
 import 'features/trainer_pass/trainer_pass_screen.dart';
 import 'providers/storage_provider.dart';
 import 'package:flutter/gestures.dart';
-import 'core/web_update_manager.dart';
+import 'core/pwa/pwa_update_listener.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,7 +45,7 @@ class MezaHelperApp extends StatelessWidget {
     return MaterialApp(
       title: 'MezaHelper',
       theme: appTheme,
-      home: const MainScaffold(),
+      home: const PwaUpdateListener(child: MainScaffold()),
       debugShowCheckedModeBanner: false,
       scrollBehavior: AppScrollBehavior(),
     );
@@ -66,10 +66,7 @@ class _MainScaffoldState extends State<MainScaffold> {
   @override
   void initState() {
     super.initState();
-    // Initialize Web PWA Update Manager
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      WebUpdateManager().init(context);
-    });
+    // Initialize Web PWA Update Manager handled by PwaUpdateListener
   }
 
   final List<Widget> _screens = [

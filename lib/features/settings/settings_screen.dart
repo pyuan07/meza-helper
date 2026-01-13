@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'settings_provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -145,12 +146,34 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  _buildVersionInfo(),
                 ],
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildVersionInfo() {
+    return FutureBuilder<PackageInfo>(
+      future: PackageInfo.fromPlatform(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox();
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 24.0, bottom: 8.0),
+            child: Text(
+              'Version ${snapshot.data!.version} (Build ${snapshot.data!.buildNumber})',
+              style: const TextStyle(
+                color: Colors.white30,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
