@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/theme.dart';
+import 'data/z_move_data.dart';
 
 class ZMovesScreen extends ConsumerWidget {
   const ZMovesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final zMoves = ZMoveRepository.getAllMoves();
+
     return Stack(
       children: [
         // Background Gradient
@@ -42,12 +45,43 @@ class ZMovesScreen extends ConsumerWidget {
 
               // List
               Expanded(
-                child: ListView.builder(
+                child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _zMoves.length,
-                  itemBuilder: (context, index) {
-                    return _ZMoveCard(move: _zMoves[index]);
-                  },
+                  children: [
+                    // Standard Moves
+                    ...zMoves
+                        .where((m) => m.relatedType != null)
+                        .map((m) => _ZMoveCard(move: m)),
+
+                    // Special Moves Section
+                    if (zMoves.any((m) => m.relatedType == null)) ...[
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Row(
+                          children: [
+                            Expanded(child: Divider(color: Colors.white24)),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              child: Text(
+                                'SPECIAL MOVES',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                            ),
+                            Expanded(child: Divider(color: Colors.white24)),
+                          ],
+                        ),
+                      ),
+                      ...zMoves
+                          .where((m) => m.relatedType == null)
+                          .map((m) => _ZMoveCard(move: m)),
+                    ],
+                    const SizedBox(height: 80), // Bottom padding
+                  ],
                 ),
               ),
             ],
@@ -65,6 +99,8 @@ class _ZMoveCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isSpecial = move.relatedType == null;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -92,28 +128,53 @@ class _ZMoveCard extends StatelessWidget {
               color: Colors.black.withOpacity(0.3),
               shape: BoxShape.circle,
             ),
-            child: SvgPicture.asset(
-              'assets/icons/${move.type.toLowerCase()}.svg',
-              width: 32,
-              height: 32,
-            ),
+            child: isSpecial
+                ? const Icon(Icons.star_rounded, color: Colors.white, size: 32)
+                : SvgPicture.asset(
+                    'assets/icons/${move.label.toLowerCase()}.svg',
+                    width: 32,
+                    height: 32,
+                  ),
           ),
           const SizedBox(width: 16),
           Expanded(
             flex: 2,
-            child: Text(
-              move.type,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                shadows: [
-                  Shadow(
-                    color: move.color,
-                    blurRadius: 8,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isSpecial)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.amber,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'SPECIAL',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                ],
-              ),
+                Text(
+                  move.label,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    shadows: [
+                      Shadow(
+                        color: move.color,
+                        blurRadius: 8,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -143,171 +204,3 @@ class _ZMoveCard extends StatelessWidget {
     );
   }
 }
-
-enum ZMoveDirection { left, right }
-
-class ZMoveData {
-  final String type;
-  final Color color;
-  final List<ZMoveDirection> sequence;
-
-  const ZMoveData({
-    required this.type,
-    required this.color,
-    required this.sequence,
-  });
-}
-
-// Data matching the provided image
-final List<ZMoveData> _zMoves = [
-  const ZMoveData(
-    type: 'Fighting',
-    color: Colors.red,
-    sequence: [
-      ZMoveDirection.right,
-      ZMoveDirection.left,
-      ZMoveDirection.right,
-      ZMoveDirection.left
-    ],
-  ),
-  const ZMoveData(
-    type: 'Water',
-    color: Colors.blue,
-    sequence: [
-      ZMoveDirection.right,
-      ZMoveDirection.right,
-      ZMoveDirection.right,
-      ZMoveDirection.left
-    ],
-  ),
-  const ZMoveData(
-    type: 'Ground',
-    color: Colors.brown,
-    sequence: [
-      ZMoveDirection.right,
-      ZMoveDirection.left,
-      ZMoveDirection.left,
-      ZMoveDirection.right
-    ],
-  ),
-  const ZMoveData(
-    type: 'Grass',
-    color: Colors.green,
-    sequence: [
-      ZMoveDirection.right,
-      ZMoveDirection.left,
-      ZMoveDirection.right,
-      ZMoveDirection.right
-    ],
-  ),
-  const ZMoveData(
-    type: 'Flying',
-    color: Colors.lightBlueAccent,
-    sequence: [
-      ZMoveDirection.left,
-      ZMoveDirection.left,
-      ZMoveDirection.left,
-      ZMoveDirection.right
-    ],
-  ),
-  const ZMoveData(
-    type: 'Ice',
-    color: Colors.cyan,
-    sequence: [
-      ZMoveDirection.left,
-      ZMoveDirection.right,
-      ZMoveDirection.left,
-      ZMoveDirection.left
-    ],
-  ),
-  ZMoveData(
-    type: 'Rock',
-    color: Colors.brown.shade300,
-    sequence: [
-      ZMoveDirection.right,
-      ZMoveDirection.right,
-      ZMoveDirection.left,
-      ZMoveDirection.right
-    ],
-  ),
-  const ZMoveData(
-    type: 'Dragon',
-    color: Colors.indigo,
-    sequence: [
-      ZMoveDirection.left,
-      ZMoveDirection.right,
-      ZMoveDirection.left,
-      ZMoveDirection.left
-    ],
-  ),
-  const ZMoveData(
-    type: 'Fairy',
-    color: Colors.pinkAccent,
-    sequence: [
-      ZMoveDirection.left,
-      ZMoveDirection.right,
-      ZMoveDirection.right,
-      ZMoveDirection.right
-    ],
-  ),
-  const ZMoveData(
-    type: 'Psychic',
-    color: Colors.purpleAccent,
-    sequence: [
-      ZMoveDirection.right,
-      ZMoveDirection.left,
-      ZMoveDirection.left,
-      ZMoveDirection.right
-    ],
-  ),
-  const ZMoveData(
-    type: 'Ghost',
-    color: Colors.deepPurple,
-    sequence: [
-      ZMoveDirection.left,
-      ZMoveDirection.left,
-      ZMoveDirection.right,
-      ZMoveDirection.left
-    ],
-  ),
-  ZMoveData(
-    type: 'Dark',
-    color: Colors.grey.shade800,
-    sequence: [
-      ZMoveDirection.left,
-      ZMoveDirection.right,
-      ZMoveDirection.left,
-      ZMoveDirection.right
-    ],
-  ),
-  const ZMoveData(
-    type: 'Steel',
-    color: Colors.blueGrey,
-    sequence: [
-      ZMoveDirection.left,
-      ZMoveDirection.right,
-      ZMoveDirection.right,
-      ZMoveDirection.left
-    ],
-  ),
-  const ZMoveData(
-    type: 'Fire',
-    color: Colors.deepOrange,
-    sequence: [
-      ZMoveDirection.left,
-      ZMoveDirection.left,
-      ZMoveDirection.right,
-      ZMoveDirection.left
-    ],
-  ),
-  const ZMoveData(
-    type: 'Electric',
-    color: Colors.amber,
-    sequence: [
-      ZMoveDirection.right,
-      ZMoveDirection.left,
-      ZMoveDirection.right,
-      ZMoveDirection.left
-    ],
-  ),
-];

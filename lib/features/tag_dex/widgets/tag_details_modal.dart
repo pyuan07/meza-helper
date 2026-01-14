@@ -8,6 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart'; // Ensure google_fonts is in pubspec, otherwise fallback
 import '../../../models/tag_model.dart';
 import '../../../providers/tag_provider.dart';
+import '../../z_moves/data/z_move_data.dart';
 
 class TagDetailsModal extends ConsumerStatefulWidget {
   final TagModel tag;
@@ -458,60 +459,161 @@ class _TagDetailsModalState extends ConsumerState<TagDetailsModal> {
                                 // --- Mechanic Card (If applicable) ---
                                 if (liveTag.mechanic != Mechanic.none) ...[
                                   const SizedBox(height: 12),
-                                  _buildInfoCard(
-                                    title: 'MECHANIC',
-                                    color: liveTag.mechanic.color,
-                                    expandContent: false,
-                                    content: Row(
-                                      children: [
-                                        Container(
-                                          width: 32,
-                                          height: 32,
-                                          decoration: BoxDecoration(
-                                            color: liveTag.mechanic.color,
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                                color: Colors.white, width: 2),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: liveTag.mechanic.color
-                                                    .withOpacity(0.5),
-                                                blurRadius: 8,
-                                                offset: const Offset(0, 2),
+                                  Builder(builder: (context) {
+                                    final zMoveData =
+                                        ZMoveRepository.getMoveForTag(liveTag);
+
+                                    return _buildInfoCard(
+                                      title: 'MECHANIC',
+                                      color: liveTag.mechanic.color,
+                                      expandContent: false,
+                                      content: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Container(
+                                                width: 32,
+                                                height: 32,
+                                                decoration: BoxDecoration(
+                                                  color: liveTag.mechanic.color,
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(
+                                                      color: Colors.white,
+                                                      width: 2),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: liveTag
+                                                          .mechanic.color
+                                                          .withOpacity(0.5),
+                                                      blurRadius: 8,
+                                                      offset:
+                                                          const Offset(0, 2),
+                                                    ),
+                                                  ],
+                                                ),
+                                                alignment: Alignment.center,
+                                                child: Text(
+                                                  liveTag
+                                                      .mechanic.displayName[0]
+                                                      .toUpperCase(),
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Text(
+                                                liveTag.mechanic.displayName,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                  color: Colors.black87,
+                                                  shadows: [
+                                                    Shadow(
+                                                      color: liveTag
+                                                          .mechanic.color
+                                                          .withOpacity(0.3),
+                                                      blurRadius: 10,
+                                                      offset:
+                                                          const Offset(0, 2),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
                                             ],
                                           ),
-                                          alignment: Alignment.center,
-                                          child: Text(
-                                            liveTag.mechanic.displayName[0]
-                                                .toUpperCase(),
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
+                                          // Z-Move Sequence
+                                          if (zMoveData != null) ...[
+                                            const SizedBox(height: 12),
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 8,
+                                                      horizontal: 12),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: zMoveData.color
+                                                      .withOpacity(0.3),
+                                                ),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  if (zMoveData.relatedType ==
+                                                      null) ...[
+                                                    // Special Tag Indicator
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 6,
+                                                          vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.amber,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(4),
+                                                      ),
+                                                      child: const Text(
+                                                        'SPECIAL',
+                                                        style: TextStyle(
+                                                          color: Colors.black,
+                                                          fontSize: 10,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                  ],
+                                                  Expanded(
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: zMoveData
+                                                          .sequence
+                                                          .map((dir) {
+                                                        return Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  horizontal:
+                                                                      2),
+                                                          child: Icon(
+                                                            dir ==
+                                                                    ZMoveDirection
+                                                                        .left
+                                                                ? Icons
+                                                                    .arrow_back_ios_new_rounded
+                                                                : Icons
+                                                                    .arrow_forward_ios_rounded,
+                                                            color: dir ==
+                                                                    ZMoveDirection
+                                                                        .left
+                                                                ? Colors
+                                                                    .cyanAccent
+                                                                : Colors
+                                                                    .orangeAccent,
+                                                            size: 24,
+                                                          ),
+                                                        );
+                                                      }).toList(),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Text(
-                                          liveTag.mechanic.displayName,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                            color: Colors.black87,
-                                            shadows: [
-                                              Shadow(
-                                                color: liveTag.mechanic.color
-                                                    .withOpacity(0.3),
-                                                blurRadius: 10,
-                                                offset: const Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                          ],
+                                        ],
+                                      ),
+                                    );
+                                  }),
                                 ],
 
                                 const SizedBox(height: 32),

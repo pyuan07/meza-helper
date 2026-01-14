@@ -118,15 +118,24 @@
         return null;
       }
       
-      try {
-        // decodeFromImageElement would require creating an element, 
-        // decodeFromImageUrl works with url
-        const result = await reader.decodeFromImageUrl(imageUrl);
-        return result.text;
-      } catch (err) {
-        console.error("ZXing scan error:", err);
-        return null;
+      const maxRetries = 3;
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          // decodeFromImageElement would require creating an element, 
+          // decodeFromImageUrl works with url
+          const result = await reader.decodeFromImageUrl(imageUrl);
+          return result.text;
+        } catch (err) {
+          console.warn(`ZXing scan attempt ${i + 1} failed:`, err);
+          if (i === maxRetries - 1) {
+             console.error("All ZXing scan attempts failed.");
+             return null;
+          }
+          // Wait before retrying (e.g., 500ms)
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
       }
+      return null;
     }
   </script>
 </body>

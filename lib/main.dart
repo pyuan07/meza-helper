@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'features/settings/settings_provider.dart';
 import 'core/theme.dart';
-import 'features/home/home_screen.dart';
+import 'features/tag_dex/tag_dex_screen.dart';
 import 'features/support/support_screen.dart';
 import 'features/others/others_screen.dart';
 import 'features/z_moves/z_moves_screen.dart';
@@ -69,7 +69,7 @@ class MainScaffold extends StatefulWidget {
 }
 
 class _MainScaffoldState extends State<MainScaffold> {
-  int _currentIndex = 2; // Default to Home (Center)
+  int _currentIndex = 2; // Default to Trainer Pass (Center)
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -79,10 +79,10 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   final List<Widget> _screens = [
-    const TrainerPassScreen(),
     const SupportScreen(),
-    const HomeScreen(),
     const ZMovesScreen(),
+    const TrainerPassScreen(),
+    const TagDexScreen(),
     const OthersScreen(),
   ];
 
@@ -104,13 +104,13 @@ class _MainScaffoldState extends State<MainScaffold> {
         width: 72, // "Not too big but bigger" (Standard is 56)
         height: 72,
         child: FloatingActionButton(
-          onPressed: () => _onItemTapped(2), // Index 2 is Home
+          onPressed: () => _onItemTapped(2), // Index 2 is Trainer Pass
           elevation: 4,
           backgroundColor:
               _currentIndex == 2 ? colorScheme.secondary : colorScheme.surface,
           shape: const CircleBorder(),
           child: Icon(
-            Icons.home_rounded,
+            Icons.badge_rounded,
             size: 36,
             color: _currentIndex == 2 ? Colors.black : Colors.white,
           ),
@@ -128,12 +128,12 @@ class _MainScaffoldState extends State<MainScaffold> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(0, Icons.badge_outlined, Icons.badge, 'Trainer'),
               _buildNavItem(
-                  1, Icons.handyman_outlined, Icons.handyman, 'Support'),
+                  0, Icons.handyman_outlined, Icons.handyman, 'Support'),
+              _buildNavItem(
+                  1, Icons.flash_on_outlined, Icons.flash_on, 'Z-Moves'),
               const SizedBox(width: 48), // Spacer for the FAB
-              _buildNavItem(
-                  3, Icons.flash_on_outlined, Icons.flash_on, 'Z-Moves'),
+              _buildNavItem(3, Icons.style_outlined, Icons.style, 'Tag Dex'),
               _buildNavItem(
                   4, Icons.grid_view, Icons.grid_view_rounded, 'Others'),
             ],

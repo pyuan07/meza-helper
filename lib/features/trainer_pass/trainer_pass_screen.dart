@@ -151,9 +151,7 @@ class _TrainerPassScreenState extends ConsumerState<TrainerPassScreen> {
   Widget _buildContent(List<TrainerModel> trainers) {
     return Stack(
       children: [
-        // Remove local dark background so we don't block MainScaffold gradient if desired
-        // But for QR contrast we might want a dark overlay behind just the carousel?
-        // Let's keep a partial dark overlay
+        // Partial dark overlay for better contrast
         Positioned.fill(
           child: Container(color: Colors.black.withOpacity(0.8)),
         ),
