@@ -1,0 +1,57 @@
+name: Tag Data Correction
+description: Report incorrect or missing tag / move data
+labels: ["data"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping keep the data accurate! Please don't attach copyrighted
+        scans or official artwork — a description or a photo of your own physical tag is fine.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What needs fixing?
+      options:
+        - Incorrect tag data
+        - Missing tag
+        - Incorrect move data
+        - Wrong version assignment
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: tag
+    attributes:
+      label: Tag / Pokémon Name
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Game Version
+      placeholder: "ver1 / ver2 / ver3 / ver4"
+
+  - type: textarea
+    id: current
+    attributes:
+      label: What the app currently shows
+    validations:
+      required: true
+
+  - type: textarea
+    id: correct
+    attributes:
+      label: What it should show
+    validations:
+      required: true
+
+  - type: textarea
+    id: source
+    attributes:
+      label: Source
+      description: How do you know? A photo of your own tag, or a link to a reliable reference.
+    validations:
+      required: true

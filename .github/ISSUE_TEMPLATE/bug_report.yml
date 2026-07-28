@@ -1,0 +1,82 @@
+name: Bug Report
+description: Report something that isn't working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to file a bug report!
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear description of what's wrong.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. Open '...'
+        2. Tap on '...'
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature
+    attributes:
+      label: Which part of the app?
+      options:
+        - Trainer Pass / QR codes
+        - Tag Dex / collection tracking
+        - Tags Tower
+        - Z-Moves
+        - Support
+        - Settings
+        - App-wide (startup, navigation, theming)
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Android
+        - iOS
+        - Web (PWA)
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device and OS Version
+      placeholder: "Pixel 8, Android 15 / iPhone 14, iOS 18 / Chrome 131 on Windows 11"
+
+  - type: input
+    id: version
+    attributes:
+      label: App Version
+      description: Shown in the app's settings, or the commit you built from.
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or Screenshots
+      description: Output from `flutter run` or screenshots of the problem.
+      render: shell

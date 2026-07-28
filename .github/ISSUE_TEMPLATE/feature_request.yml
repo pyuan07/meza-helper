@@ -1,0 +1,42 @@
+name: Feature Request
+description: Suggest an idea or improvement
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem would this solve? What's awkward today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Relevant Platforms
+      multiple: true
+      options:
+        - Android
+        - iOS
+        - Web (PWA)
+        - Desktop
+        - All
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I'd be willing to work on this
